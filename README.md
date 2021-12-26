@@ -17,7 +17,7 @@ Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 - Use the **Up arrow**, **Down arrow**, **W** and **S**  keys to scroll through the options
 - Use the **Spacebar** key to select, toggle or execute an option
 - Use the **Spacebar**, **Left arrow**, **Right arrow**, **A** and **D** keys for toggles
-- Use the **Left arrow**, **Right arrow** and ** for selections
+- Use the **Left arrow**, **Right arrow** and, **A** and **D** for selections
 - You can use the **Left shift** key to scroll faster
 - Use the **Escape (esc)** key to go back or close the menu
 
