@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include <iostream>
+#include <Psapi.h>
 #include <detours.h>
 #include <vector>
 #include <map>
@@ -21,6 +21,14 @@ struct Sm3Vector3
 {
 	float x, y, z;
 };
+
+static float Sm3Vector3_Distance(Sm3Vector3* a, Sm3Vector3* b)
+{
+	float x = a->x - b->x;
+	float y = a->y - b->y;
+	float z = a->z - b->z;
+	return sqrtf((x * x) + (y * y) + (z * z));
+}
 
 static bool IsInGame()
 {
@@ -160,7 +168,9 @@ static bool bGodMode = false;
 static bool bUnlockFPS = false;
 static bool bNewGoblinBoost = false;
 static bool bFreezeTimer = false;
-static bool bEnablePedestrains = true;
+static bool bDisablePedestrians = false;
+static bool bDisableTraffic = false;
+static bool bDisableInterface = false;
 
 static void KillHero()
 {
@@ -348,12 +358,40 @@ static void SetWorldTime(DWORD hours)
 
 static void TogglePedestrians(bool value)
 {
+	// slf__peds_get_peds_enabled__t
+
 	if (IsInGame()) // if we don't check this, the game crashes
 	{
-		float* peds = GetWorldValue2("peds_enabled");
-		if (peds != nullptr)
+		CREATE_FN(unsigned int, __cdecl, 0x7A6070, (bool));
+		sub_0x7A6070(value);
+	}
+}
+
+static void DisableTraffic()
+{
+	// slf__force_clear_traffic__t
+
+	CREATE_FN(void, __cdecl, 0x61CEF0, (char));
+	sub_0x61CEF0(0);
+}
+
+static void UnlockAllUpgrades()
+{
+	// slf__exptrk_notify_completed_*
+
+	CREATE_FN(void*, , 0x7CF450, ());
+	void* v2 = sub_0x7CF450();
+	for (DWORD i = 0; i < 1000; i++)
+	{
+		CREATE_FN(void*, __thiscall, 0x7CB4B0, (void*, DWORD));
+		void* v3 = sub_0x7CB4B0(v2, i);
+		if (v3 != nullptr)
 		{
-			*peds = (float)value;
+			for (DWORD* j = *(DWORD**)((DWORD)v3 + 8); j != *(DWORD**)((DWORD)v3 + 12); j += 2)
+			{
+				*(DWORD*)(*j + 4) += j[1];
+			}
+			*(BYTE*)((DWORD)v3 + 20) = 1;
 		}
 	}
 }
@@ -382,7 +420,7 @@ enum class E_NGLMENU_ITEM_TYPE
 
 class NGLMenu
 {
-#define SM3_NGL_DEFUALT_FONT *(void**)0x11081B8
+#define SM3_NGL_DEFAULT_FONT *(void**)0x11081B8
 public:
 	struct NGLMenuItem;
 private:
@@ -474,7 +512,7 @@ private:
 	static void nglGetTextSize(const char* text, int* refWidth, int* refHeight, float scale_x, float scale_y)
 	{
 		CREATE_FN(__int16, __cdecl, 0x8D9410, (void*, const char*, int*, int*, float, float));
-		sub_0x8D9410(SM3_NGL_DEFUALT_FONT, text, refWidth, refHeight, scale_x, scale_y);
+		sub_0x8D9410(SM3_NGL_DEFAULT_FONT, text, refWidth, refHeight, scale_x, scale_y);
 	}
 
 	static void nglConstructBox(nglBox* box)
@@ -506,11 +544,19 @@ private:
 	static void nglDrawText(const char* text, int color, float x, float y, float scale_x, float scale_y)
 	{
 		CREATE_FN(int, __cdecl, 0x8D9820, (void*, const char*, float, float, float, int, float, float));
-		sub_0x8D9820(SM3_NGL_DEFUALT_FONT, text, x, y, -9999.0f, color, scale_x, scale_y);
+		sub_0x8D9820(SM3_NGL_DEFAULT_FONT, text, x, y, -9999.0f, color, scale_x, scale_y);
+	}
+
+	static HWND GetGameWindow()
+	{
+		return *(HWND*)(*(DWORD*)0x10F9C2C + 4);
 	}
 
 	bool GetKeyDown(int vKey)
 	{
+		if (GetFocus() != GetGameWindow())
+			return false;
+
 		SHORT state = GetAsyncKeyState(vKey);
 		this->m_keys_down[vKey] |= (state < 0 && !this->m_keys_down[vKey]);
 		if (state == 0 && this->m_keys_down[vKey])
@@ -523,6 +569,9 @@ private:
 
 	bool GetKey(int vKey)
 	{
+		if (GetFocus() != GetGameWindow())
+			return false;
+
 		return GetAsyncKeyState(vKey) & 0x8000;
 	}
 
@@ -1059,7 +1108,7 @@ static void LoadInterior(DWORD ptr)
 	Sm3Vector3 pos2 = *(Sm3Vector3*)(ptr + 208);
 	pos2.y = pos1.y;
 	Sm3Vector3* heroPos = GetHeroPosPtr();
-	if (pos2.y < 0.0f || heroPos->y < 0.0f) // is underground (sub or sew)
+	if (pos2.y < 0.0f || heroPos->y < 0.0f)
 	{
 		UnlockAllInteriors();
 	}
@@ -1073,16 +1122,6 @@ static void LoadInterior(DWORD ptr)
 		}
 	}
 	TeleportHero(pos2);
-}
-
-static void RemoveRegionUnload()
-{
-	void* ptr = (void*)0x00803427;
-	const size_t SIZE = 7;
-	DWORD old;
-	VirtualProtect(ptr, SIZE, PAGE_EXECUTE_READWRITE, &old);
-	memset(ptr, 0x90, SIZE);
-	VirtualProtect(ptr, SIZE, old, &old);
 }
 
 static bool NGLMenuOnHide()
@@ -1119,7 +1158,6 @@ static bool NGLMenuOnShow()
 
 	if (s_WarpButton != nullptr && s_WarpButton->subitems.items.size() == 0)
 	{
-		RemoveRegionUnload();
 		for (size_t i = 0; i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
 		{
 			MenuRegionStrip* rs = s_RegionStrips + i;
@@ -1176,6 +1214,7 @@ int nglPresent_Hook(void)
 		NGLMenu::NGLMenuItem* globalMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Global", nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Remove FPS Limit", &bUnlockFPS, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Show Perf Info", &bShowStats, nullptr);
+		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Interface", &bDisableInterface, nullptr);
 
 		NGLMenu::NGLMenuItem* heroMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Hero", nullptr);
 		NGLMenu::NGLMenuItem* changeHeroMenu = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Change Hero", nullptr);
@@ -1193,6 +1232,7 @@ int nglPresent_Hook(void)
 		}
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "God Mode", &bGodMode);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "New Goblin Inf. Boost", &bNewGoblinBoost);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill Hero", &KillHero);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Respawn", &RespawnHero);
 
@@ -1211,7 +1251,8 @@ int nglPresent_Hook(void)
 			itoa(level, levelNumBuffer, 10);
 			s_GlassHouseLevelSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_TEXT, levelNumBuffer, &SetGlassHouseLevel, (void*)level);
 		}
-		worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Enable Pedestrians", &bEnablePedestrains);
+		worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Pedestrians", &bDisablePedestrians);
+		worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Traffic", &bDisableTraffic);
 
 		NGLMenu::NGLMenuItem* missionManagerMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Mission Manager", nullptr);
 		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Terminate Mission", &TerminateCurrentMission, nullptr);
@@ -1236,7 +1277,7 @@ int nglPresent_Hook(void)
 		s_NGLMenu->OnHide = &NGLMenuOnHide;
 		s_NGLMenu->OnShow = &NGLMenuOnShow;
 	}
-	if (!s_NGLMenu->IsOpen)
+	if (!s_NGLMenu->IsOpen && !bDisableInterface)
 	{
 		s_NGLMenu->DrawWatermark("RaimiHook by AkyrosXD");
 	}
@@ -1245,14 +1286,14 @@ int nglPresent_Hook(void)
 	return p_nglPresent();
 }
 
-typedef void(__thiscall* Update_t)(void*);
-static Update_t pUpdate;
+typedef void(__thiscall* Sm3Game__Update_t)(void*);
+static Sm3Game__Update_t original_Sm3Game__Update;
 
 struct Sm3Game
 {
 	static const uintptr_t UPDATE_ADDRESS = 0x545F00;
 
-	void Update()
+	void Update_Hook()
 	{
 		s_NGLMenu->CallCurrentCallback();
 		s_NGLMenu->ResetCurrentCallback();
@@ -1280,25 +1321,77 @@ struct Sm3Game
 			// we set it to false and boom
 			*(bool*)0xE84610 = false;
 		}
-		TogglePedestrians(bEnablePedestrains);
-		pUpdate(this);
+		TogglePedestrians(!bDisablePedestrians);
+		if (bDisableTraffic)
+		{
+			DisableTraffic();
+		}
+		original_Sm3Game__Update(this);
 	}
 };
 
-typedef void* (__thiscall* UpdateCurrentTimer_t)(void*, float);
-static UpdateCurrentTimer_t pUpdateCurrentTimer;
+typedef void* (__thiscall* IGOTimerWidget__UpdateCurrentTimer_t)(void*, float);
+static IGOTimerWidget__UpdateCurrentTimer_t original_IGOTimerWidget__UpdateCurrentTimer;
 
 struct IGOTimerWidget
 {
 	static const uintptr_t UPDATE_CURRENT_TIMER_ADDRESS = 0x6B5000;
 
-	void* UpdateCurrentTimerHook(float a2)
+	void* UpdateCurrentTimer_Hook(float a2)
 	{
 		s_CurrentTimer = this;
 		if (bFreezeTimer)
 			a2 = 0;
 
-		return pUpdateCurrentTimer(this, a2);
+		return original_IGOTimerWidget__UpdateCurrentTimer(this, a2);
+	}
+};
+
+typedef int(__thiscall* IGOFrontEnd__Draw_t)(void*);
+static IGOFrontEnd__Draw_t original_IGOFrontEnd__Draw;
+
+struct IGOFrontEnd
+{
+	static const uintptr_t DRAW_ADDRESS = 0x6F2910;
+
+	int Draw_Hook()
+	{
+		if (bDisableInterface)
+			return 0;
+
+		return original_IGOFrontEnd__Draw(this);
+	}
+};
+
+typedef bool(__thiscall* Megacity__GetRegionState_t)(void*, void*, bool);
+static Megacity__GetRegionState_t original_Megacity__GetRegionState;
+
+struct Megacity
+{
+	static const uintptr_t GET_REGION_STATE_ADDRESS = 0x551680;
+
+	bool GetRegionState_Hook(void* region, bool bUnload)
+	{
+		if (!bUnload)
+		{
+			return original_Megacity__GetRegionState(this, region, bUnload);
+		}
+		else
+		{
+			char* name = *(char**)((DWORD)region + 188);
+			Sm3Vector3* pos = (Sm3Vector3*)((DWORD)region + 220);
+			char* hero = GetCurrentHero();
+			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && Sm3Vector3_Distance(pos, GetHeroPosPtr()) < 130.0f)
+			{
+				// the game forces the daily bugle interior to unload if you switch to new goblin
+				// by hooking this function, we prevent that
+				return false;
+			}
+			else
+			{
+				return original_Megacity__GetRegionState(this, region, bUnload);
+			}
+		}
 	}
 };
 
@@ -1308,30 +1401,31 @@ void StartThread(HANDLE mainThread)
 
 	p_nglPresent = (nglPresent_t)0x8CD650;
 	DetourAttach(&(PVOID&)p_nglPresent, nglPresent_Hook);
+	original_Sm3Game__Update = (Sm3Game__Update_t)(Sm3Game::UPDATE_ADDRESS);
+	auto ptrUpdateHook = &Sm3Game::Update_Hook;
+	DetourAttach(&(PVOID&)original_Sm3Game__Update, *(void**)&ptrUpdateHook);
 
-	pUpdate = (Update_t)(Sm3Game::UPDATE_ADDRESS);
-	auto ptrUpdateHook = &Sm3Game::Update;
-	DetourAttach(&(PVOID&)pUpdate, *(void**)&ptrUpdateHook);
+	original_IGOTimerWidget__UpdateCurrentTimer = (IGOTimerWidget__UpdateCurrentTimer_t)IGOTimerWidget::UPDATE_CURRENT_TIMER_ADDRESS;
+	auto ptrUpdateCurrentTimeHook = &IGOTimerWidget::UpdateCurrentTimer_Hook;
+	DetourAttach(&(PVOID&)original_IGOTimerWidget__UpdateCurrentTimer, *(void**)&ptrUpdateCurrentTimeHook);
 
-	pUpdateCurrentTimer = (UpdateCurrentTimer_t)IGOTimerWidget::UPDATE_CURRENT_TIMER_ADDRESS;
-	auto ptrUpdateCurrentTimeHook = &IGOTimerWidget::UpdateCurrentTimerHook;
-	DetourAttach(&(PVOID&)pUpdateCurrentTimer, *(void**)&ptrUpdateCurrentTimeHook);
+	original_Megacity__GetRegionState = (Megacity__GetRegionState_t)Megacity::GET_REGION_STATE_ADDRESS;
+	auto ptrGetRegionStateHook = &Megacity::GetRegionState_Hook;
+	DetourAttach(&(PVOID&)original_Megacity__GetRegionState, *(void**)&ptrGetRegionStateHook);
+
+	original_IGOFrontEnd__Draw = (IGOFrontEnd__Draw_t)IGOFrontEnd::DRAW_ADDRESS;
+	auto ptrDrawHook = &IGOFrontEnd::Draw_Hook;
+	DetourAttach(&(PVOID&)original_IGOFrontEnd__Draw, *(void**)&ptrDrawHook);
 
 	DetourTransactionCommit();
 }
 
 static bool IsGameCompatible()
 {
-	const char* megacity = (const char*)0x00A40F10;
-	MEMORY_BASIC_INFORMATION meminfo;
-
-	if (VirtualQuery(megacity, &meminfo, sizeof(MEMORY_BASIC_INFORMATION)) == 0)
-		return false;
-
-	if (meminfo.AllocationProtect <= PAGE_NOACCESS)
-		return false;
-
-	return strncmp(megacity, "megacity", 9) == 0;
+	MODULEINFO info;
+	HMODULE base = GetModuleHandleA(0);
+	GetModuleInformation(GetCurrentProcess(), base, &info, sizeof(MODULEINFO));
+	return (uintptr_t)info.EntryPoint == 0x9CEBE8;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
