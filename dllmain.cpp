@@ -8,7 +8,6 @@
 
 #define SM3_FIXED_DELTA_TIME 0.033333335f
 #define SM3_PLAYER_MAX_HEALTH 2000
-#define SM3_HERO_NAME_MAX_SIZE 16
 #define SM3_SPAWN_PONTS_COUNT 13
 #define SM3_SIZE_OF_REGION 304
 #define SM3_REGIONS_COUNT 560
@@ -17,12 +16,12 @@
 typedef RETURN_TYPE(CALLING_CONV* sub_##RVA##_t)ARGS; \
 sub_##RVA##_t sub_##RVA = (sub_##RVA##_t)##RVA \
 
-struct Sm3Vector3
+struct vector3d
 {
 	float x, y, z;
 };
 
-static float Sm3Vector3_Distance(Sm3Vector3* a, Sm3Vector3* b)
+static float vector3d_Distance(vector3d* a, vector3d* b)
 {
 	float x = a->x - b->x;
 	float y = a->y - b->y;
@@ -61,19 +60,19 @@ static float* GetWorldValue2(const char* g)
 	return sub_0x906100(*(void**)0x110A668, g);
 }
 
-static Sm3Vector3* GetHeroPosPtr()
+static vector3d* GetHeroPosPtr()
 {
 	DWORD v1 = *(DWORD*)0x10CFEF0;
 	int* v6 = *(int**)(*(DWORD*)(v1 + 532) + 16);
 	float* v47 = ((float*)v6 + 12);
-	return (Sm3Vector3*)v47;
+	return (vector3d*)v47;
 }
 
-static Sm3Vector3* GetCamPosPtr()
+static vector3d* GetCamPosPtr()
 {
 	DWORD v4 = *(DWORD*)0xDE7A1C;
 	DWORD v9 = *(DWORD*)(*(DWORD*)(v4 + 92) + 16) + 48;
-	return (Sm3Vector3*)v9;
+	return (vector3d*)v9;
 }
 
 class Sm3String
@@ -142,24 +141,18 @@ static void RespawnHero()
 	ChangeHero(GetCurrentHero());
 }
 
-static void TeleportHero(Sm3Vector3 pos)
+static void TeleportHero(vector3d pos)
 {
 	if (IsInGame())
 	{
-		Sm3Vector3* posPtr = GetHeroPosPtr();
-		Sm3Vector3* camPosPtr = GetCamPosPtr();
-		if (posPtr != nullptr && camPosPtr != nullptr)
-		{
-			*posPtr = pos;
-			*camPosPtr = pos;
-			RespawnHero();
-		}
+		CREATE_FN(void, __thiscall, 0x894800, (void*, void*, char, char));
+		sub_0x894800(*(void**)0x10CFEF0, &pos, 0, 1);
 	}
 }
 
 static void SpawnToPoint(size_t idx)
 {
-	Sm3Vector3* spawnPoints = (Sm3Vector3*)GetWorldValue2("g_hero_spawn_points");
+	vector3d* spawnPoints = (vector3d*)GetWorldValue2("g_hero_spawn_points");
 	TeleportHero(spawnPoints[idx]);
 }
 
@@ -171,6 +164,8 @@ static bool bFreezeTimer = false;
 static bool bDisablePedestrians = false;
 static bool bDisableTraffic = false;
 static bool bDisableInterface = false;
+static bool bBlacksuitRage = false;
+static bool bInfiniteCombo = false;
 
 static void KillHero()
 {
@@ -402,9 +397,6 @@ static void EndCurrentTimer()
 {
 	*(float*)((DWORD)s_CurrentTimer + 48) = 0.0f;
 }
-
-typedef int (*nglPresent_t)(void);
-static nglPresent_t p_nglPresent;
 
 #define RGBA_TO_INT(r, g, b, a) ((a << 24) | (r << 16) | (g << 8) | b)
 
@@ -1104,10 +1096,10 @@ static std::map<DWORD, MenuRegionInfo> s_MenuRegions;
 
 static void LoadInterior(DWORD ptr)
 {
-	Sm3Vector3 pos1 = *(Sm3Vector3*)(ptr + 220);
-	Sm3Vector3 pos2 = *(Sm3Vector3*)(ptr + 208);
+	vector3d pos1 = *(vector3d*)(ptr + 220);
+	vector3d pos2 = *(vector3d*)(ptr + 208);
 	pos2.y = pos1.y;
-	Sm3Vector3* heroPos = GetHeroPosPtr();
+	vector3d* heroPos = GetHeroPosPtr();
 	if (pos2.y < 0.0f || heroPos->y < 0.0f)
 	{
 		UnlockAllInteriors();
@@ -1205,6 +1197,10 @@ static bool NGLMenuOnShow()
 	return true;
 }
 
+typedef int (*nglPresent_t)(void);
+static nglPresent_t original_nglPresent;
+static const uintptr_t NGL_PRESENT_ADDRESS = 0x8CD650;
+
 int nglPresent_Hook(void)
 {
 	if (s_NGLMenu == nullptr)
@@ -1231,7 +1227,9 @@ int nglPresent_Hook(void)
 			spawnPointsMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, idxBuffer, &SpawnToPoint, (void*)i);
 		}
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "God Mode", &bGodMode);
-		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "New Goblin Inf. Boost", &bNewGoblinBoost);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Spidey Infinite Combo Meter", &bInfiniteCombo);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Black Suit Rage", &bBlacksuitRage);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "New Goblin Infinite Boost", &bNewGoblinBoost);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill Hero", &KillHero);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Respawn", &RespawnHero);
@@ -1283,7 +1281,7 @@ int nglPresent_Hook(void)
 	}
 	s_NGLMenu->Draw();
 	s_NGLMenu->HandleUserInput();
-	return p_nglPresent();
+	return original_nglPresent();
 }
 
 typedef void(__thiscall* Sm3Game__Update_t)(void*);
@@ -1379,9 +1377,9 @@ struct Megacity
 		else
 		{
 			char* name = *(char**)((DWORD)region + 188);
-			Sm3Vector3* pos = (Sm3Vector3*)((DWORD)region + 220);
+			vector3d* pos = (vector3d*)((DWORD)region + 220);
 			char* hero = GetCurrentHero();
-			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && Sm3Vector3_Distance(pos, GetHeroPosPtr()) < 130.0f)
+			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && vector3d_Distance(pos, GetHeroPosPtr()) < 130.0f)
 			{
 				// the game forces the daily bugle interior to unload if you switch to new goblin
 				// by hooking this function, we prevent that
@@ -1395,12 +1393,52 @@ struct Megacity
 	}
 };
 
+typedef double(__thiscall* blacksuit_player_interface__GetRageValue_t)(void*);
+blacksuit_player_interface__GetRageValue_t original_blacksuit_player_interface__GetRageValue;
+
+struct blacksuit_player_interface
+{
+	static const uintptr_t GET_RAGE_VALUE_ADDRESS = 0x66B260;
+
+	double GetRageValue_Hook()
+	{
+		if (bBlacksuitRage)
+		{
+			*(float*)((DWORD)this + 2028) = 1000.0f;
+			*(float*)((DWORD)this + 2032) = 1000.0f;
+			*(float*)((DWORD)this + 2036) = 1000.0f;
+			return 1.0;
+		}
+		else
+		{
+			return original_blacksuit_player_interface__GetRageValue(this);
+		}
+	}
+};
+
+typedef signed int(__thiscall* player_interface__UpdateComboMeter_t)(void*, float, signed int);
+player_interface__UpdateComboMeter_t original_player_interface__UpdateComboMeter;
+
+struct player_interface
+{
+	static const uintptr_t UPDATE_COMBO_METER_ADDRESS = 0x55B5E0;
+
+	signed int UpdateComboMeter_Hook(float a2, signed int a3)
+	{
+		if (bInfiniteCombo)
+			a2 = 10000.0f;
+
+		return original_player_interface__UpdateComboMeter(this, a2, a3);
+	}
+};
+
 void StartThread(HANDLE mainThread)
 {
 	DetourTransactionBegin();
 
-	p_nglPresent = (nglPresent_t)0x8CD650;
-	DetourAttach(&(PVOID&)p_nglPresent, nglPresent_Hook);
+	original_nglPresent = (nglPresent_t)NGL_PRESENT_ADDRESS;
+	DetourAttach(&(PVOID&)original_nglPresent, nglPresent_Hook);
+
 	original_Sm3Game__Update = (Sm3Game__Update_t)(Sm3Game::UPDATE_ADDRESS);
 	auto ptrUpdateHook = &Sm3Game::Update_Hook;
 	DetourAttach(&(PVOID&)original_Sm3Game__Update, *(void**)&ptrUpdateHook);
@@ -1416,6 +1454,14 @@ void StartThread(HANDLE mainThread)
 	original_IGOFrontEnd__Draw = (IGOFrontEnd__Draw_t)IGOFrontEnd::DRAW_ADDRESS;
 	auto ptrDrawHook = &IGOFrontEnd::Draw_Hook;
 	DetourAttach(&(PVOID&)original_IGOFrontEnd__Draw, *(void**)&ptrDrawHook);
+
+	original_blacksuit_player_interface__GetRageValue = (blacksuit_player_interface__GetRageValue_t)blacksuit_player_interface::GET_RAGE_VALUE_ADDRESS;
+	auto ptrGetRageValueHook = &blacksuit_player_interface::GetRageValue_Hook;
+	DetourAttach(&(PVOID&)original_blacksuit_player_interface__GetRageValue, *(void**)&ptrGetRageValueHook);
+
+	original_player_interface__UpdateComboMeter = (player_interface__UpdateComboMeter_t)player_interface::UPDATE_COMBO_METER_ADDRESS;
+	auto ptrUpdateComboMeter = &player_interface::UpdateComboMeter_Hook;
+	DetourAttach(&(PVOID&)original_player_interface__UpdateComboMeter, *(void**)&ptrUpdateComboMeter);
 
 	DetourTransactionCommit();
 }
