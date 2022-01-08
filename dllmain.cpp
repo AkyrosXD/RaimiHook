@@ -1308,7 +1308,7 @@ int nglPresent_Hook(void)
 		timerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Freeze Timer", &bFreezeTimer);
 		timerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "End Timer", &EndCurrentTimer);
 
-		NGLMenu::NGLMenuItem* entitiesMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Entites", nullptr);
+		NGLMenu::NGLMenuItem* entitiesMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Entities", nullptr);
 		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill All", &KillAllEntities);
 
 		s_WarpButton = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Warp", nullptr);
