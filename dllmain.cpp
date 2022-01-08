@@ -29,23 +29,45 @@ static float vector3d_Distance(vector3d* a, vector3d* b)
 	return sqrtf((x * x) + (y * y) + (z * z));
 }
 
-static bool IsInGame()
+struct entity
 {
-	return (*(void**)(*(DWORD*)0x10CFEF0 + 532) != nullptr);
+	int* GetHealthPtr()
+	{
+		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
+		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 0);
+		return v13 + 68;
+	}
+
+	int* GetMaxHealthPtr()
+	{
+		return GetHealthPtr() + 2;
+	}
+
+	vector3d* GetPositionPtr()
+	{
+		float* v9 = (float*)((DWORD*)this)[4];
+		return (vector3d*)&v9[12];
+	}
+
+	void ApplyDamage(int damage)
+	{
+		BYTE unk[32];
+		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
+		vector3d* pos = GetPositionPtr();
+		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 0);
+		CREATE_FN(int, __thiscall, 0x75D650, (void*, int, signed int, signed int, void*, void*, int, void*, void*, int, signed int, int, void*, void*, float, char, int, void*));
+		sub_0x75D650(v13, 0, damage, 3, pos, pos, 0, unk, pos, 10, 1, 0, (void*)0xDE2CB8, (void*)0xCF2568, 1.5f, 0, 0, 0);
+	}
+};
+
+static entity* GetLocalPlayerEntity()
+{
+	return (entity*)*(void**)(*(DWORD*)0x10CFEF0 + 532);
 }
 
-static int* GetHealthPtr()
+static bool IsInGame()
 {
-	void* v10 = *(void**)(*(DWORD*)0x10CFEF0 + 532);
-	if (v10 == nullptr)
-		return nullptr;
-
-	CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
-	int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)v10 + 28), 0);
-	if (v13 == nullptr)
-		return nullptr;
-
-	return v13 + 68;
+	return (GetLocalPlayerEntity() != nullptr);
 }
 
 static float* GetWorldValue(const char* gv)
@@ -58,14 +80,6 @@ static float* GetWorldValue2(const char* g)
 {
 	CREATE_FN(float*, __thiscall, 0x906100, (void*, const char*));
 	return sub_0x906100(*(void**)0x110A668, g);
-}
-
-static vector3d* GetHeroPosPtr()
-{
-	DWORD v1 = *(DWORD*)0x10CFEF0;
-	int* v6 = *(int**)(*(DWORD*)(v1 + 532) + 16);
-	float* v47 = ((float*)v6 + 12);
-	return (vector3d*)v47;
 }
 
 static vector3d* GetCamPosPtr()
@@ -166,15 +180,18 @@ static bool bDisableTraffic = false;
 static bool bDisableInterface = false;
 static bool bBlacksuitRage = false;
 static bool bInfiniteCombo = false;
+static bool bInstantKill = false;
+
+static void FullHealth()
+{
+	entity* player = GetLocalPlayerEntity();
+	*player->GetHealthPtr() = *player->GetMaxHealthPtr();
+}
 
 static void KillHero()
 {
-	if (!bGodMode)
-	{
-		int* hp = GetHealthPtr();
-		if (hp != nullptr)
-			*hp = 0;
-	}
+	entity* player = GetLocalPlayerEntity();
+	*player->GetHealthPtr() = 0;
 }
 
 static const char* s_Heroes[] =
@@ -260,7 +277,7 @@ static const char* s_WorldTimes[] =
 static int s_GlassHouseLevels[] =
 {
 	-1, 0, 1
-};;
+};
 
 static bool IsGamePaused()
 {
@@ -1099,7 +1116,7 @@ static void LoadInterior(DWORD ptr)
 	vector3d pos1 = *(vector3d*)(ptr + 220);
 	vector3d pos2 = *(vector3d*)(ptr + 208);
 	pos2.y = pos1.y;
-	vector3d* heroPos = GetHeroPosPtr();
+	vector3d* heroPos = GetLocalPlayerEntity()->GetPositionPtr();
 	if (pos2.y < 0.0f || heroPos->y < 0.0f)
 	{
 		UnlockAllInteriors();
@@ -1114,6 +1131,24 @@ static void LoadInterior(DWORD ptr)
 		}
 	}
 	TeleportHero(pos2);
+}
+
+static void KillAllEntities()
+{
+	DWORD* entityList = *(DWORD**)0xDEB84C;
+	for (DWORD* i = entityList; i; i = (DWORD*)*i)
+	{
+		DWORD* v7 = *(DWORD**)((DWORD)i + 12);
+		entity* currentEntity = (entity*)v7[48];
+		if (currentEntity != GetLocalPlayerEntity())
+		{
+			int hp = *currentEntity->GetHealthPtr();
+			if (hp > 0)
+			{
+				currentEntity->ApplyDamage(hp);
+			}
+		}
+	}
 }
 
 static bool NGLMenuOnHide()
@@ -1230,7 +1265,9 @@ int nglPresent_Hook(void)
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Spidey Infinite Combo Meter", &bInfiniteCombo);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Black Suit Rage", &bBlacksuitRage);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "New Goblin Infinite Boost", &bNewGoblinBoost);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Instant Kill", &bInstantKill);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades);
+		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Full Health", &FullHealth);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill Hero", &KillHero);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Respawn", &RespawnHero);
 
@@ -1271,6 +1308,9 @@ int nglPresent_Hook(void)
 		timerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Freeze Timer", &bFreezeTimer);
 		timerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "End Timer", &EndCurrentTimer);
 
+		NGLMenu::NGLMenuItem* entitiesMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Entites", nullptr);
+		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill All", &KillAllEntities);
+
 		s_WarpButton = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Warp", nullptr);
 		s_NGLMenu->OnHide = &NGLMenuOnHide;
 		s_NGLMenu->OnShow = &NGLMenuOnShow;
@@ -1299,12 +1339,7 @@ struct Sm3Game
 		float* fixedDeltaTimePtr = (float*)0xD09604;
 
 		*(bool*)0x1106978 = bShowStats;
-		if (bGodMode)
-		{
-			int* hp = GetHealthPtr();
-			if (hp != nullptr)
-				*hp = 2000;
-		}
+		*(bool*)0xE89AFC = bGodMode;
 		if (bUnlockFPS)
 		{
 			*fixedDeltaTimePtr = 0.0f;
@@ -1324,6 +1359,7 @@ struct Sm3Game
 		{
 			DisableTraffic();
 		}
+		*(bool*)0xE89AFD = bInstantKill;
 		original_Sm3Game__Update(this);
 	}
 };
@@ -1370,7 +1406,7 @@ struct Megacity
 
 	bool GetRegionState_Hook(void* region, bool bUnload)
 	{
-		if (!bUnload)
+		if (!bUnload || !IsInGame())
 		{
 			return original_Megacity__GetRegionState(this, region, bUnload);
 		}
@@ -1379,7 +1415,8 @@ struct Megacity
 			char* name = *(char**)((DWORD)region + 188);
 			vector3d* pos = (vector3d*)((DWORD)region + 220);
 			char* hero = GetCurrentHero();
-			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && vector3d_Distance(pos, GetHeroPosPtr()) < 130.0f)
+			vector3d* heroPos = GetLocalPlayerEntity()->GetPositionPtr();
+			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && vector3d_Distance(pos, heroPos) < 130.0f)
 			{
 				// the game forces the daily bugle interior to unload if you switch to new goblin
 				// by hooking this function, we prevent that
