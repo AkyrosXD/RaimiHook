@@ -29,8 +29,9 @@ static float vector3d_Distance(vector3d* a, vector3d* b)
 	return sqrtf((x * x) + (y * y) + (z * z));
 }
 
-struct entity
+class entity
 {
+private:
 	int* GetHealthPtr()
 	{
 		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
@@ -40,10 +41,26 @@ struct entity
 
 	int* GetMaxHealthPtr()
 	{
-		return GetHealthPtr() + 2;
+		return this->GetHealthPtr() + 2;
 	}
 
-	vector3d* GetPositionPtr()
+public:
+	int GetHealth()
+	{
+		return *this->GetHealthPtr();
+	}
+
+	void SetHealth(int hp)
+	{
+		*this->GetHealthPtr() = hp;
+	}
+
+	int GetMaxHealth()
+	{
+		return *this->GetMaxHealthPtr();
+	}
+
+	vector3d* GetPosition()
 	{
 		float* v9 = (float*)((DWORD*)this)[4];
 		return (vector3d*)&v9[12];
@@ -53,10 +70,23 @@ struct entity
 	{
 		BYTE unk[32];
 		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
-		vector3d* pos = GetPositionPtr();
+		vector3d* pos = this->GetPosition();
 		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 0);
 		CREATE_FN(int, __thiscall, 0x75D650, (void*, int, signed int, signed int, void*, void*, int, void*, void*, int, signed int, int, void*, void*, float, char, int, void*));
 		sub_0x75D650(v13, 0, damage, 3, pos, pos, 0, unk, pos, 10, 1, 0, (void*)0xDE2CB8, (void*)0xCF2568, 1.5f, 0, 0, 0);
+	}
+};
+
+struct entity_node
+{
+	entity_node* next;
+	entity_node* previous;
+	void* unk;
+	DWORD* data_ptr;
+
+	entity* GetEntity()
+	{
+		return (entity*)this->data_ptr[48];
 	}
 };
 
@@ -185,13 +215,13 @@ static bool bInstantKill = false;
 static void FullHealth()
 {
 	entity* player = GetLocalPlayerEntity();
-	*player->GetHealthPtr() = *player->GetMaxHealthPtr();
+	player->SetHealth(player->GetMaxHealth());
 }
 
 static void KillHero()
 {
 	entity* player = GetLocalPlayerEntity();
-	*player->GetHealthPtr() = 0;
+	player->SetHealth(0);
 }
 
 static const char* s_Heroes[] =
@@ -1116,7 +1146,7 @@ static void LoadInterior(DWORD ptr)
 	vector3d pos1 = *(vector3d*)(ptr + 220);
 	vector3d pos2 = *(vector3d*)(ptr + 208);
 	pos2.y = pos1.y;
-	vector3d* heroPos = GetLocalPlayerEntity()->GetPositionPtr();
+	vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
 	if (pos2.y < 0.0f || heroPos->y < 0.0f)
 	{
 		UnlockAllInteriors();
@@ -1135,14 +1165,13 @@ static void LoadInterior(DWORD ptr)
 
 static void KillAllEntities()
 {
-	DWORD* entityList = *(DWORD**)0xDEB84C;
-	for (DWORD* i = entityList; i; i = (DWORD*)*i)
+	entity_node* entityList = *(entity_node**)0xDEB84C;
+	for (entity_node* node = entityList; (node != nullptr); node = node->next)
 	{
-		DWORD* v7 = *(DWORD**)((DWORD)i + 12);
-		entity* currentEntity = (entity*)v7[48];
+		entity* currentEntity = node->GetEntity();
 		if (currentEntity != GetLocalPlayerEntity())
 		{
-			int hp = *currentEntity->GetHealthPtr();
+			int hp = currentEntity->GetHealth();
 			if (hp > 0)
 			{
 				currentEntity->ApplyDamage(hp);
@@ -1415,7 +1444,7 @@ struct Megacity
 			char* name = *(char**)((DWORD)region + 188);
 			vector3d* pos = (vector3d*)((DWORD)region + 220);
 			char* hero = GetCurrentHero();
-			vector3d* heroPos = GetLocalPlayerEntity()->GetPositionPtr();
+			vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
 			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && vector3d_Distance(pos, heroPos) < 130.0f)
 			{
 				// the game forces the daily bugle interior to unload if you switch to new goblin
