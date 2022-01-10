@@ -66,6 +66,20 @@ public:
 		return (vector3d*)&v9[12];
 	}
 
+	void Teleport(vector3d* position)
+	{
+		vector3d* currentPosition = this->GetPosition();
+		CREATE_FN(int, __cdecl, 0x4387F0, (void*, void*));
+		CREATE_FN(int, __thiscall, 0x738AA0, (void*, void*));
+		CREATE_FN(int, __thiscall, 0x779D10, (void*));
+		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
+		float* v9 = (float*)((DWORD*)this)[4];
+		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 1);
+		sub_0x4387F0(currentPosition, position);
+		sub_0x738AA0(this, position);
+		sub_0x779D10(v13);
+	}
+
 	void ApplyDamage(int damage)
 	{
 		BYTE unk[32];
@@ -185,19 +199,19 @@ static void RespawnHero()
 	ChangeHero(GetCurrentHero());
 }
 
-static void TeleportHero(vector3d pos)
+static void TeleportHero(vector3d* pos)
 {
 	if (IsInGame())
 	{
 		CREATE_FN(void, __thiscall, 0x894800, (void*, void*, char, char));
-		sub_0x894800(*(void**)0x10CFEF0, &pos, 0, 1);
+		sub_0x894800(*(void**)0x10CFEF0, pos, 0, 1);
 	}
 }
 
 static void SpawnToPoint(size_t idx)
 {
 	vector3d* spawnPoints = (vector3d*)GetWorldValue2("g_hero_spawn_points");
-	TeleportHero(spawnPoints[idx]);
+	TeleportHero(&spawnPoints[idx]);
 }
 
 static bool bShowStats = false;
@@ -325,7 +339,7 @@ static void TogglePause()
 	sub_0x7F6E10(*(void**)0xDE7A1C, 4);
 }
 
-static void UnlockAllInteriors()
+static void UnlockAllUndergroundInteriors()
 {
 	DWORD regionsPtr = *(DWORD*)0x00F23780;
 	if (regionsPtr != 0)
@@ -334,7 +348,11 @@ static void UnlockAllInteriors()
 		for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
 		{
 			DWORD region = (regionStart + (i * SM3_SIZE_OF_REGION));
-			*(DWORD*)((DWORD)region + 148) &= 0xFFFFFFFE;
+			vector3d* pos = (vector3d*)(region + 208);
+			if (pos->y < 0.0f)
+			{
+				*(DWORD*)((DWORD)region + 148) &= 0xFFFFFFFE;
+			}
 		}
 	}
 }
@@ -1147,9 +1165,9 @@ static void LoadInterior(DWORD ptr)
 	vector3d pos2 = *(vector3d*)(ptr + 208);
 	pos2.y = pos1.y;
 	vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
-	if (pos2.y < 0.0f || heroPos->y < 0.0f)
+	if (pos2.y < 0.0f)
 	{
-		UnlockAllInteriors();
+		UnlockAllUndergroundInteriors();
 	}
 	else
 	{
@@ -1160,7 +1178,7 @@ static void LoadInterior(DWORD ptr)
 			*(DWORD*)((DWORD)region + 148) &= 0xFFFFFFFE;
 		}
 	}
-	TeleportHero(pos2);
+	TeleportHero(&pos2);
 }
 
 static void KillAllEntities()
@@ -1177,6 +1195,53 @@ static void KillAllEntities()
 				currentEntity->ApplyDamage(hp);
 			}
 		}
+	}
+}
+
+static void TeleportAllEntitiesToMe()
+{
+	entity* localPlayer = GetLocalPlayerEntity();
+	entity_node* entityList = *(entity_node**)0xDEB84C;
+	for (entity_node* node = entityList; (node != nullptr); node = node->next)
+	{
+		entity* currentEntity = node->GetEntity();
+		if (currentEntity != localPlayer)
+		{
+			int hp = currentEntity->GetHealth();
+			if (hp > 0)
+			{
+				currentEntity->Teleport(localPlayer->GetPosition());
+			}
+		}
+	}
+}
+
+static void TeleportToNearestEntity()
+{
+	float minDist = (float)0xFFFFFF;
+	entity* target = nullptr;
+	entity* localPlayer = GetLocalPlayerEntity();
+	entity_node* entityList = *(entity_node**)0xDEB84C;
+	for (entity_node* node = entityList; (node != nullptr); node = node->next)
+	{
+		entity* currentEntity = node->GetEntity();
+		if (currentEntity != localPlayer)
+		{
+			int hp = currentEntity->GetHealth();
+			if (hp > 0)
+			{
+				float dist = vector3d_Distance(localPlayer->GetPosition(), currentEntity->GetPosition());
+				if (dist < minDist)
+				{
+					target = currentEntity;
+					minDist = dist;
+				}
+			}
+		}
+	}
+	if (target != nullptr)
+	{
+		TeleportHero(target->GetPosition());
 	}
 }
 
@@ -1339,6 +1404,8 @@ int nglPresent_Hook(void)
 
 		NGLMenu::NGLMenuItem* entitiesMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Entities", nullptr);
 		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill All", &KillAllEntities);
+		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Teleport All To Me", &TeleportAllEntitiesToMe);
+		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Teleport To Nearest", &TeleportToNearestEntity);
 
 		s_WarpButton = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Warp", nullptr);
 		s_NGLMenu->OnHide = &NGLMenuOnHide;
