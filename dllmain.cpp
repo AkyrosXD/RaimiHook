@@ -68,16 +68,10 @@ public:
 
 	void Teleport(vector3d* position)
 	{
-		vector3d* currentPosition = this->GetPosition();
-		CREATE_FN(int, __cdecl, 0x4387F0, (void*, void*));
-		CREATE_FN(int, __thiscall, 0x738AA0, (void*, void*));
-		CREATE_FN(int, __thiscall, 0x779D10, (void*));
-		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
-		float* v9 = (float*)((DWORD*)this)[4];
-		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 1);
-		sub_0x4387F0(currentPosition, position);
-		sub_0x738AA0(this, position);
-		sub_0x779D10(v13);
+		CREATE_FN(int, __cdecl, 0x739030, (void*, void*));
+		CREATE_FN(int, __thiscall, 0x73AF20, (void*));
+		sub_0x739030(this, position);
+		sub_0x73AF20(this);
 	}
 
 	void ApplyDamage(int damage)
@@ -460,6 +454,9 @@ static void* s_CurrentTimer;
 
 static void EndCurrentTimer()
 {
+	if (s_CurrentTimer == nullptr)
+		return;
+
 	*(float*)((DWORD)s_CurrentTimer + 48) = 0.0f;
 }
 
@@ -983,10 +980,7 @@ public:
 				{
 					this->m_current_callback.callback_ptr = selectedItem->callback_ptr;
 					this->m_current_callback.callback_arg = selectedItem->callback_arg;
-					if (this->GetOnHide())
-					{
-						this->IsOpen = false;
-					}
+					this->IsOpen = !this->GetOnHide();
 				}
 			}
 			break;
@@ -1351,8 +1345,8 @@ int nglPresent_Hook(void)
 		NGLMenu::NGLMenuItem* spawnPointsMenu = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Spawn Points", nullptr);
 		for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 		{
-			char* idxBuffer = new char[2];
-			sprintf(idxBuffer, "%02d", (int)i);
+			char* idxBuffer = new char[14];
+			sprintf(idxBuffer, "Spawn Point %02d", (int)i);
 			spawnPointsMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, idxBuffer, &SpawnToPoint, (void*)i);
 		}
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "God Mode", &bGodMode);
@@ -1429,33 +1423,36 @@ struct Sm3Game
 
 	void Update_Hook()
 	{
-		s_NGLMenu->CallCurrentCallback();
-		s_NGLMenu->ResetCurrentCallback();
+		if (!IsGamePaused())
+		{
+			s_NGLMenu->CallCurrentCallback();
+			s_NGLMenu->ResetCurrentCallback();
 
-		float* fixedDeltaTimePtr = (float*)0xD09604;
+			float* fixedDeltaTimePtr = (float*)0xD09604;
 
-		*(bool*)0x1106978 = bShowStats;
-		*(bool*)0xE89AFC = bGodMode;
-		if (bUnlockFPS)
-		{
-			*fixedDeltaTimePtr = 0.0f;
+			*(bool*)0x1106978 = bShowStats;
+			*(bool*)0xE89AFC = bGodMode;
+			if (bUnlockFPS)
+			{
+				*fixedDeltaTimePtr = 0.0f;
+			}
+			else if (*fixedDeltaTimePtr == 0.0f)
+			{
+				*fixedDeltaTimePtr = SM3_FIXED_DELTA_TIME;
+			}
+			if (bNewGoblinBoost)
+			{
+				// it is some kind of "is boosting" value
+				// we set it to false and boom
+				*(bool*)0xE84610 = false;
+			}
+			TogglePedestrians(!bDisablePedestrians);
+			if (bDisableTraffic)
+			{
+				DisableTraffic();
+			}
+			*(bool*)0xE89AFD = bInstantKill;
 		}
-		else if (*fixedDeltaTimePtr == 0.0f)
-		{
-			*fixedDeltaTimePtr = SM3_FIXED_DELTA_TIME;
-		}
-		if (bNewGoblinBoost)
-		{
-			// it is some kind of "is boosting" value
-			// we set it to false and boom
-			*(bool*)0xE84610 = false;
-		}
-		TogglePedestrians(!bDisablePedestrians);
-		if (bDisableTraffic)
-		{
-			DisableTraffic();
-		}
-		*(bool*)0xE89AFD = bInstantKill;
 		original_Sm3Game__Update(this);
 	}
 };
