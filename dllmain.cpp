@@ -11,10 +11,640 @@
 #define SM3_SPAWN_PONTS_COUNT 13
 #define SM3_SIZE_OF_REGION 304
 #define SM3_REGIONS_COUNT 560
+#define SM3_CAMERA_DEFAULT_FOV 67
+#define SM3_CAMERA_MIN_FOV 1
+#define SM3_CAMERA_MAX_FOV 180
+
+#define RAIMIHOOK_VER_STR "RaimiHook Version: 7"
 
 #define CREATE_FN(RETURN_TYPE, CALLING_CONV, RVA, ARGS) \
 typedef RETURN_TYPE(CALLING_CONV* sub_##RVA##_t)ARGS; \
 sub_##RVA##_t sub_##RVA = (sub_##RVA##_t)##RVA \
+
+#define RGBA_TO_INT(r, g, b, a) ((a << 24) | (r << 16) | (g << 8) | b)
+
+enum class E_NGLMENU_ITEM_TYPE
+{
+	E_NONE,
+	E_BUTTON,
+	E_BOOLEAN,
+	E_MENU,
+	E_SELECT
+};
+
+class NGLMenu
+{
+#define SM3_NGL_DEFAULT_FONT *(void**)0x11081B8
+#define SM3_NGL_WINDOW_FONT_SCALE 0.85f
+#define SM3_NGL_WINDOW_MAX_HEIGHT 480.0f
+#define SM3_NGL_WINDOW_ITEM_RIGHT_PADDING 15.0f
+#define SM3_NGL_WINDOW_ITEM_LEFT_PADDING 5.0f
+#define SM3_NGL_WINDOW_TITLE_TOP_PADDING 5.0f
+#define SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING 5.0f
+#define SM3_NGL_WINDOW_UP_ARROW " ^ ^ ^"
+#define SM3_NGL_WINDOW_DOWN_ARROW " v v v"
+public:
+	struct NGLMenuItem;
+private:
+	typedef unsigned int nglColor_t;
+	struct nglBox
+	{
+		BYTE data[104];
+	};
+public:
+	struct ItemList
+	{
+		ItemList* previous = nullptr;
+		std::vector<NGLMenuItem*> items;
+		size_t selected_item_index = 0;
+		const char* name = "";
+		float scroll_y = 0.0f;
+
+		NGLMenuItem* MenuAddItem(NGLMenu* main, E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+		{
+			NGLMenuItem* item = new NGLMenuItem;
+			item->type = type;
+			item->text = text;
+			item->value_ptr = valuePtr;
+			item->callback_arg = callbackArg;
+			nglGetTextSize(text, &item->text_width, &item->text_height, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+			item->main = main;
+			this->items.push_back(item);
+			return item;
+		}
+	};
+	struct NGLMenuItem
+	{
+		NGLMenu* main = nullptr;
+		E_NGLMENU_ITEM_TYPE type = E_NGLMENU_ITEM_TYPE::E_NONE;
+		const char* text = "";
+		int text_height = 0;
+		int text_width = 0;
+		float pos_y = 0.0f;
+		float display_pos_y = 0.0f;
+		bool is_visible = false;
+		union
+		{
+			void* value_ptr = nullptr;
+			void* callback_ptr;
+		};
+		union
+		{
+			void* callback_arg = nullptr;
+			const char* menu_name;
+		};
+		struct ItemList subitems;
+
+		NGLMenuItem* AddSubItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+		{
+			return  this->subitems.MenuAddItem(this->main, type, text, valuePtr, callbackArg);
+		}
+	};
+
+	struct NGLButtonCallback
+	{
+		void* callback_ptr = nullptr;
+		void* callback_arg = nullptr;
+	};
+private:
+	nglBox m_ngl_box_data;
+	const char* m_name;
+	float m_window_pos_x;
+	float m_window_pos_y;
+	float m_width;
+	float m_default_width;
+	float m_height;
+	float m_default_height;
+	int m_down_arrow_width;
+	int m_down_arrow_height;
+	int m_up_arrow_width;
+	int m_up_arrow_height;
+	ItemList m_items;
+	ItemList* m_currentItems;
+	bool m_keys_down[512];
+	NGLButtonCallback m_current_callback;
+
+	static void nglGetTextSize(const char* text, int* refWidth, int* refHeight, float scale_x, float scale_y)
+	{
+		CREATE_FN(__int16, __cdecl, 0x8D9410, (void*, const char*, int*, int*, float, float));
+		sub_0x8D9410(SM3_NGL_DEFAULT_FONT, text, refWidth, refHeight, scale_x, scale_y);
+	}
+
+	static void nglConstructBox(nglBox* box)
+	{
+		CREATE_FN(void, __cdecl, 0x8C91A0, (void*));
+		sub_0x8C91A0(box);
+	}
+
+	static void nglSetBoxRect(nglBox* box, float x, float y, float width, float height)
+	{
+		CREATE_FN(void, __cdecl, 0x8C92C0, (void*, float, float, float, float));
+		sub_0x8C92C0(box, x, y, width, height);
+		CREATE_FN(void, __cdecl, 0x8C9310, (void*, float));
+		sub_0x8C9310(box, -9999.0f);
+	}
+
+	static void nglSetBoxColor(nglBox* box, nglColor_t color)
+	{
+		CREATE_FN(void, __cdecl, 0x8C92A0, (void*, nglColor_t));
+		sub_0x8C92A0(box, color);
+	}
+
+	static void nglDrawBox(nglBox* box)
+	{
+		CREATE_FN(void, __cdecl, 0x8C9440, (void*));
+		sub_0x8C9440(box);
+	}
+
+	static void nglDrawText(const char* text, int color, float x, float y, float scale_x, float scale_y)
+	{
+		CREATE_FN(int, __cdecl, 0x8D9820, (void*, const char*, float, float, float, int, float, float));
+		sub_0x8D9820(SM3_NGL_DEFAULT_FONT, text, x, y, -9999.0f, color, scale_x, scale_y);
+	}
+
+	static HWND GetGameWindow()
+	{
+		return *(HWND*)(*(DWORD*)0x10F9C2C + 4);
+	}
+
+	bool GetKeyDown(int vKey)
+	{
+		if (GetFocus() != GetGameWindow())
+			return false;
+
+		SHORT state = GetAsyncKeyState(vKey);
+		this->m_keys_down[vKey] |= (state < 0 && !this->m_keys_down[vKey]);
+		if (state == 0 && this->m_keys_down[vKey])
+		{
+			this->m_keys_down[vKey] = false;
+			return true;
+		}
+		return false;
+	}
+
+	bool GetKey(int vKey)
+	{
+		if (GetFocus() != GetGameWindow())
+			return false;
+
+		return GetAsyncKeyState(vKey) & 0x8000;
+	}
+
+	bool GetOnHide()
+	{
+		typedef bool(*hide_t)();
+		hide_t phide = (hide_t)this->OnHide;
+		if (phide != nullptr)
+		{
+			return phide();
+		}
+		return true;
+	}
+
+	bool GetOnShow()
+	{
+		typedef bool(*show_t)();
+		show_t pshow = (show_t)this->OnShow;
+		if (pshow != nullptr)
+		{
+			return pshow();
+		}
+		return true;
+	}
+
+	void GoBack()
+	{
+		if (this->m_currentItems->previous != nullptr)
+		{
+			this->m_currentItems = this->m_currentItems->previous;
+			this->m_width = (float)this->m_default_width;
+		}
+		else
+		{
+			this->IsOpen = !this->GetOnHide();
+		}
+	}
+
+	void ChangeList(ItemList* list)
+	{
+		ItemList* currentList = this->m_currentItems;
+		this->m_currentItems = list;
+		this->m_currentItems->previous = currentList;
+		int w, h;
+		nglGetTextSize(list->name, &w, &h, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+		this->m_default_width = (float)w + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING;
+	}
+
+	float GetWindowMaxHeight()
+	{
+		return SM3_NGL_WINDOW_MAX_HEIGHT - this->m_window_pos_y;
+	}
+
+	float GetMaxItemY()
+	{
+		return this->GetWindowMaxHeight() - SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING - SM3_NGL_WINDOW_TITLE_TOP_PADDING - (float)this->m_down_arrow_height - SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+	}
+
+	bool CanScrollDown()
+	{
+		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
+		return !lastItem->is_visible;
+	}
+
+	float GetDownArrowsY()
+	{
+		return this->GetWindowMaxHeight() - (float)this->m_down_arrow_height - SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+	}
+
+	float GetUpArrowsY()
+	{
+		return this->m_window_pos_y + (float)this->m_default_height;
+	}
+
+	bool CanScrollUp()
+	{
+		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
+		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
+		return this->m_currentItems->selected_item_index != 0 && lastItem->pos_y > this->GetMaxItemY();
+	}
+
+	float GetMinItemY()
+	{
+		float result = this->GetUpArrowsY();
+		if (this->CanScrollUp())
+		{
+			result += ((float)this->m_up_arrow_height + SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING);
+		}
+		return result;
+	}
+
+public:
+	bool IsOpen;
+	void* OnHide;
+	void* OnShow;
+
+	NGLMenu(const char* windowText, float x, float y)
+	{
+		this->IsOpen = false;
+		this->m_currentItems = &this->m_items;
+		this->OnShow = nullptr;
+		this->OnHide = nullptr;
+		this->m_name = windowText;
+		this->m_items.name = windowText;
+		this->m_window_pos_x = x;
+		this->m_window_pos_y = y;
+		nglConstructBox(&this->m_ngl_box_data);
+		int defaultWidth, defaultHeight;
+		nglGetTextSize(windowText, &defaultWidth, &defaultHeight, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+		this->m_default_width = (float)defaultWidth + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING;
+		this->m_default_height = (float)defaultHeight + SM3_NGL_WINDOW_TITLE_TOP_PADDING + SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+		nglGetTextSize(SM3_NGL_WINDOW_DOWN_ARROW, &this->m_down_arrow_width, &this->m_down_arrow_height, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+		nglGetTextSize(SM3_NGL_WINDOW_UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+		this->m_width = (float)this->m_default_width;
+		this->m_height = (float)this->m_default_height;
+		nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
+	}
+
+	NGLMenuItem* AddItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+	{
+		return this->m_items.MenuAddItem(this, type, text, valuePtr, callbackArg);
+	}
+
+	void CallCurrentCallback()
+	{
+		if (this->m_current_callback.callback_ptr != nullptr)
+		{
+			typedef void(*itemcallback_t)(void*);
+			itemcallback_t callback = (itemcallback_t)this->m_current_callback.callback_ptr;
+			callback(this->m_current_callback.callback_arg);
+		}
+	}
+
+	void ResetCurrentCallback()
+	{
+		this->m_current_callback.callback_ptr = nullptr;
+		this->m_current_callback.callback_arg = nullptr;
+	}
+
+	void Draw()
+	{
+		if (!this->IsOpen)
+			return;
+
+		if (this->m_currentItems->items.size() > 0)
+		{
+			float width = this->m_default_width;
+			if (this->CanScrollUp())
+			{
+				width = max(width, (float)this->m_up_arrow_width + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING);
+			}
+			if (this->CanScrollDown())
+			{
+				width = max(width, (float)this->m_down_arrow_width + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING);
+			}
+
+			nglSetBoxRect(&this->m_ngl_box_data, this->m_window_pos_x, this->m_window_pos_y, this->m_width, this->m_height);
+			nglDrawBox(&this->m_ngl_box_data);
+			nglDrawText(this->m_currentItems->name, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, this->m_window_pos_y + SM3_NGL_WINDOW_TITLE_TOP_PADDING, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+			float yStart = this->GetMinItemY();
+			float currentItemY = yStart;
+			NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
+			for (size_t i = 0; i < this->m_currentItems->items.size(); i++)
+			{
+				NGLMenuItem* item = this->m_currentItems->items[i];
+				item->pos_y = currentItemY;
+				char itemDisplayText[128];
+				nglColor_t currentTextColor = RGBA_TO_INT(255, 255, 255, 255);
+				bool selected = (i == this->m_currentItems->selected_item_index);
+				if (selected)
+				{
+					currentTextColor = RGBA_TO_INT(0, 255, 21, 255);
+				}
+				switch (item->type)
+				{
+				case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
+				{
+					bool val = *(bool*)item->value_ptr;
+					sprintf(itemDisplayText, "%s: %s", item->text, val ? "True" : "False");
+				}
+				break;
+
+				case E_NGLMENU_ITEM_TYPE::E_BUTTON:
+				{
+					strcpy(itemDisplayText, item->text);
+				}
+				break;
+
+				case E_NGLMENU_ITEM_TYPE::E_MENU:
+				{
+					sprintf(itemDisplayText, "%s: ...", item->text);
+				}
+				break;
+
+				case E_NGLMENU_ITEM_TYPE::E_SELECT:
+				{
+					if (item->subitems.items.size() > 0)
+					{
+						NGLMenuItem* selection = item->subitems.items[item->subitems.selected_item_index];
+						if (selection->type == E_NGLMENU_ITEM_TYPE::E_NONE)
+						{
+							sprintf(itemDisplayText, "%s: %s", item->text, selection->text);
+						}
+					}
+					else
+					{
+						sprintf(itemDisplayText, "%s:", item->text);
+					}
+				}
+				break;
+
+				default:
+					break;
+				}
+				nglGetTextSize(itemDisplayText, &item->text_width, &item->text_height, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+				bool overflow = item->pos_y > this->GetMaxItemY();
+				if (!overflow)
+				{
+					this->m_height = item->pos_y + (float)item->text_height + SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+				}
+				else
+				{
+					if (item->display_pos_y > this->GetMaxItemY())
+					{
+						this->m_height = this->GetWindowMaxHeight();
+					}
+					else
+					{
+						this->m_height = item->display_pos_y + (float)item->text_height + SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+					}
+				}
+				if (selected)
+				{
+					this->m_currentItems->scroll_y = item->pos_y;
+				}
+				if (lastItem->pos_y > this->GetMaxItemY())
+				{
+					item->display_pos_y = item->pos_y - this->m_currentItems->scroll_y + yStart;
+				}
+				else
+				{
+					item->display_pos_y = item->pos_y;
+				}
+				item->is_visible = item->display_pos_y >= yStart && item->display_pos_y <= this->GetMaxItemY();
+				if (item->is_visible)
+				{
+					float tmpWidth = (float)item->text_width + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING;
+					width = max(width, tmpWidth);
+					nglDrawText(itemDisplayText, currentTextColor, this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, item->display_pos_y, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+				}
+
+				currentItemY += (float)item->text_height + SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING;
+			}
+			if (this->CanScrollDown())
+			{
+				nglDrawText(SM3_NGL_WINDOW_DOWN_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, this->GetDownArrowsY(), SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+			}
+			if (this->CanScrollUp())
+			{
+				nglDrawText(SM3_NGL_WINDOW_UP_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, this->GetUpArrowsY(), SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+			}
+			this->m_width = width;
+		}
+	}
+
+	void DrawWatermark(const char* text)
+	{
+		nglDrawText(text, RGBA_TO_INT(255, 255, 255, 255), 10.0f, 10.0f, 1.0f, 1.0f);
+	}
+
+	bool KeyInputScroll(int vk)
+	{
+		return (this->GetKeyDown(vk) || (this->GetKey(VK_LSHIFT) && this->GetKey(vk)));
+	}
+
+	void HandleUserInput()
+	{
+		// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+
+		const int VK_A = 0x41;
+		const int VK_D = 0x44;
+		const int VK_W = 0x57;
+		const int VK_S = 0x53;
+
+		if (this->GetKeyDown(VK_INSERT))
+		{
+			this->IsOpen = (!(this->IsOpen && this->GetOnHide()) && (!this->IsOpen && this->GetOnShow()));
+		}
+
+		if (!this->IsOpen)
+			return;
+
+		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
+
+		bool up = this->KeyInputScroll(VK_W) || this->KeyInputScroll(VK_UP);
+		bool down = this->KeyInputScroll(VK_S) || this->KeyInputScroll(VK_DOWN);
+		bool left = this->KeyInputScroll(VK_A) || this->KeyInputScroll(VK_LEFT);
+		bool right = this->KeyInputScroll(VK_D) || this->KeyInputScroll(VK_RIGHT);
+		bool back = this->GetKeyDown(VK_ESCAPE);
+		bool execute = this->GetKeyDown(VK_SPACE);
+		if (up)
+		{
+			if (this->m_currentItems->selected_item_index == 0)
+			{
+				size_t lastItemIndex = this->m_currentItems->items.size() - 1;
+				this->m_currentItems->selected_item_index = lastItemIndex;
+			}
+			else
+			{
+				this->m_currentItems->selected_item_index--;
+			}
+		}
+		if (down)
+		{
+			if (this->m_currentItems->selected_item_index == this->m_currentItems->items.size() - 1)
+			{
+				this->m_currentItems->selected_item_index = 0;
+			}
+			else
+			{
+				this->m_currentItems->selected_item_index++;
+			}
+		}
+
+		if (back)
+		{
+			this->GoBack();
+		}
+		if (execute)
+		{
+			switch (selectedItem->type)
+			{
+			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
+			{
+				if (selectedItem->value_ptr != nullptr)
+				{
+					bool* val = (bool*)selectedItem->value_ptr;
+					*val = !*val;
+				}
+			}
+			break;
+
+			case E_NGLMENU_ITEM_TYPE::E_BUTTON:
+			{
+				if (selectedItem->callback_ptr != nullptr)
+				{
+					this->m_current_callback.callback_ptr = selectedItem->callback_ptr;
+					this->m_current_callback.callback_arg = selectedItem->callback_arg;
+					this->IsOpen = !this->GetOnHide();
+				}
+			}
+			break;
+
+			case E_NGLMENU_ITEM_TYPE::E_MENU:
+			{
+				if (!selectedItem->subitems.items.empty())
+				{
+					selectedItem->subitems.name = selectedItem->text;
+					this->ChangeList(&selectedItem->subitems);
+				}
+			}
+			break;
+
+			default:
+				break;
+			}
+		}
+		if (left)
+		{
+			switch (selectedItem->type)
+			{
+			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
+			{
+				if (selectedItem->value_ptr != nullptr)
+				{
+					bool* val = (bool*)selectedItem->value_ptr;
+					*val = !*val;
+				}
+			}
+			break;
+
+			case E_NGLMENU_ITEM_TYPE::E_SELECT:
+			{
+				if (selectedItem->subitems.items.size() > 0)
+				{
+					int prevIndex = selectedItem->subitems.selected_item_index;
+					if (selectedItem->subitems.selected_item_index == 0)
+					{
+						selectedItem->subitems.selected_item_index = selectedItem->subitems.items.size() - 1;
+					}
+					else
+					{
+						selectedItem->subitems.selected_item_index--;
+					}
+					if (selectedItem->subitems.selected_item_index != prevIndex)
+					{
+						NGLMenuItem* selection = selectedItem->subitems.items[selectedItem->subitems.selected_item_index];
+						this->m_current_callback.callback_ptr = selection->callback_ptr;
+						this->m_current_callback.callback_arg = selection->callback_arg;
+					}
+				}
+			}
+			break;
+
+			default:
+				break;
+			}
+		}
+		if (right)
+		{
+			switch (selectedItem->type)
+			{
+			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
+			{
+				if (selectedItem->value_ptr != nullptr)
+				{
+					bool* val = (bool*)selectedItem->value_ptr;
+					*val = !*val;
+				}
+			}
+			break;
+
+			case E_NGLMENU_ITEM_TYPE::E_SELECT:
+			{
+				if (selectedItem->subitems.items.size() > 0)
+				{
+					int prevIndex = selectedItem->subitems.selected_item_index;
+					if (selectedItem->subitems.selected_item_index == selectedItem->subitems.items.size() - 1)
+					{
+						selectedItem->subitems.selected_item_index = 0;
+					}
+					else
+					{
+						selectedItem->subitems.selected_item_index++;
+					}
+					if (selectedItem->subitems.selected_item_index != prevIndex)
+					{
+						NGLMenuItem* selection = selectedItem->subitems.items[selectedItem->subitems.selected_item_index];
+						this->m_current_callback.callback_ptr = selection->callback_ptr;
+						this->m_current_callback.callback_arg = selection->callback_arg;
+					}
+				}
+			}
+			break;
+
+			default:
+				break;
+			}
+		}
+	}
+};
+
+static NGLMenu* s_NGLMenu;
+static NGLMenu::NGLMenuItem* s_GameTimeSelect;
+static NGLMenu::NGLMenuItem* s_GlassHouseLevelSelect;
+static NGLMenu::NGLMenuItem* s_WarpButton;
+static NGLMenu::NGLMenuItem* s_CameraModeSelect;
+static NGLMenu::NGLMenuItem* s_FovSlider;
 
 struct vector3d
 {
@@ -202,11 +832,45 @@ static void TeleportHero(vector3d* pos)
 	}
 }
 
+static vector3d* GetSpawnPoints()
+{
+	return (vector3d*)GetWorldValue2("g_hero_spawn_points");
+}
+
+static vector3d* GetNearestSpawnPoint()
+{
+	float minDist = (float)0xFFFFFF;
+	vector3d* point = nullptr;
+	vector3d* spawnPoints = GetSpawnPoints();
+	entity* localPlayer = GetLocalPlayerEntity();
+	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
+	{
+		vector3d* currentPoint = spawnPoints + i;
+		float dist = vector3d_Distance(localPlayer->GetPosition(), currentPoint);
+		if (dist < minDist)
+		{
+			point = currentPoint;
+			minDist = dist;
+		}
+	}
+	return point;
+}
+
 static void SpawnToPoint(size_t idx)
 {
-	vector3d* spawnPoints = (vector3d*)GetWorldValue2("g_hero_spawn_points");
+	vector3d* spawnPoints = GetSpawnPoints();
 	TeleportHero(&spawnPoints[idx]);
 }
+
+static void SpawnToNearestSpawnPoint()
+{
+	vector3d* p = GetNearestSpawnPoint();
+	if (p != nullptr)
+	{
+		TeleportHero(p);
+	}
+}
+
 
 static bool bShowStats = false;
 static bool bGodMode = false;
@@ -351,11 +1015,6 @@ static void UnlockAllUndergroundInteriors()
 	}
 }
 
-static void TerminateCurrentMission()
-{
-	CREATE_FN(void, __fastcall, 0x570340, (void*));
-	sub_0x570340(*(void**)0xDE7D88);
-}
 
 static int GetGlassHouseLevel()
 {
@@ -379,10 +1038,24 @@ static void SetGlassHouseLevel(int level)
 	}
 }
 
+static void FailCurrentMission()
+{
+	CREATE_FN(void*, __thiscall, 0x5710E0, (void*, bool, bool));
+	sub_0x5710E0(*(void**)0xDE7D88, false, false);
+}
+
+static void CompleteCurrentMission()
+{
+	CREATE_FN(void*, __thiscall, 0x5710E0, (void*, bool, bool));
+	sub_0x5710E0(*(void**)0xDE7D88, true, false);
+}
+
 static void LoadStoryInstance(const char* instance)
 {
-	TerminateCurrentMission();
-	Sleep(250);
+	// nuke current mission
+	CREATE_FN(void, __fastcall, 0x570340, (void*));
+	sub_0x570340(*(void**)0xDE7D88);
+
 	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
 	sub_0x571C60(*(void**)0xDE7D88, instance);
 }
@@ -450,6 +1123,36 @@ static void UnlockAllUpgrades()
 	}
 }
 
+static int s_CameraFOV = SM3_CAMERA_DEFAULT_FOV;
+
+static void Set_s_CameraFOV(int value)
+{
+	s_CameraFOV = value;
+}
+
+static void SetCameraFov(int fov)
+{
+	if (IsInGame())
+	{
+		float f = (float)fov * 0.014925373f;
+		DWORD v4 = *(DWORD*)0xDE7A1C;
+		DWORD v9 = *(DWORD*)(v4 + 92);
+		*(float*)(v9 + 200) = f;
+		*(float*)(v9 + 216) = f;
+		*(float*)0xD18C50 = f;
+	}
+}
+
+static void SetCameraFovDefault()
+{
+	SetCameraFov(SM3_CAMERA_DEFAULT_FOV);
+	Set_s_CameraFOV(SM3_CAMERA_DEFAULT_FOV);
+	if (s_FovSlider != nullptr && s_FovSlider->subitems.items.size() > SM3_CAMERA_DEFAULT_FOV)
+	{
+		s_FovSlider->subitems.selected_item_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+	}
+}
+
 static void* s_CurrentTimer;
 
 static void EndCurrentTimer()
@@ -459,635 +1162,6 @@ static void EndCurrentTimer()
 
 	*(float*)((DWORD)s_CurrentTimer + 48) = 0.0f;
 }
-
-#define RGBA_TO_INT(r, g, b, a) ((a << 24) | (r << 16) | (g << 8) | b)
-
-enum class E_NGLMENU_ITEM_TYPE
-{
-	E_NONE,
-	E_BUTTON,
-	E_BOOLEAN,
-	E_MENU,
-	E_SELECT,
-	E_TEXT
-};
-
-class NGLMenu
-{
-#define SM3_NGL_DEFAULT_FONT *(void**)0x11081B8
-public:
-	struct NGLMenuItem;
-private:
-	typedef unsigned int nglColor_t;
-	struct nglBox
-	{
-		BYTE data[104];
-	};
-public:
-	struct ItemList
-	{
-		ItemList* previous = nullptr;
-		std::vector<NGLMenuItem*> items;
-		size_t selected_item_index = 0;
-		const char* name = "";
-		float scroll_y = 0.0f;
-
-		NGLMenuItem* MenuAddItem(NGLMenu* main, E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
-		{
-			NGLMenuItem* item = new NGLMenuItem;
-			item->type = type;
-			item->text = text;
-			item->value_ptr = valuePtr;
-			item->callback_arg = callbackArg;
-			nglGetTextSize(text, &item->text_width, &item->text_height, 0.7f, 0.7f);
-			item->main = main;
-			this->items.push_back(item);
-			return item;
-		}
-	};
-	struct NGLMenuItem
-	{
-		NGLMenu* main = nullptr;
-		E_NGLMENU_ITEM_TYPE type = E_NGLMENU_ITEM_TYPE::E_NONE;
-		const char* text = "";
-		int text_height = 0;
-		int text_width = 0;
-		float pos_y = 0.0f;
-		float display_pos_y = 0.0f;
-		bool is_visible = false;
-		union
-		{
-			void* value_ptr = nullptr;
-			void* callback_ptr;
-		};
-		union
-		{
-			void* callback_arg = nullptr;
-			const char* menu_name;
-		};
-		struct ItemList subitems;
-
-		NGLMenuItem* AddSubItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
-		{
-			return  this->subitems.MenuAddItem(this->main, type, text, valuePtr, callbackArg);
-		}
-	};
-
-	struct NGLButtonCallback
-	{
-		void* callback_ptr = nullptr;
-		void* callback_arg = nullptr;
-	};
-private:
-	const float NGL_WINDOW_MAX_HEIGHT = 480.0f;
-	const float RIGHT_PADDING = 15.0f;
-	const float LEFT_PADDING = 5.0f;
-	const float TITLE_TOP_PADDING = 5.0f;
-	const float BOTTOM_PADDING = 5.0f;
-	const char* UP_ARROW = " ^ ^ ^";
-	const char* DOWN_ARROW = " v v v";
-	nglBox m_ngl_box_data;
-	const char* m_name;
-	float m_window_pos_x;
-	float m_window_pos_y;
-	float m_width;
-	float m_default_width;
-	float m_height;
-	float m_default_height;
-	int m_down_arrow_width;
-	int m_down_arrow_height;
-	int m_up_arrow_width;
-	int m_up_arrow_height;
-	ItemList m_items;
-	ItemList* m_currentItems;
-	bool m_keys_down[512];
-	NGLButtonCallback m_current_callback;
-
-	static void nglGetTextSize(const char* text, int* refWidth, int* refHeight, float scale_x, float scale_y)
-	{
-		CREATE_FN(__int16, __cdecl, 0x8D9410, (void*, const char*, int*, int*, float, float));
-		sub_0x8D9410(SM3_NGL_DEFAULT_FONT, text, refWidth, refHeight, scale_x, scale_y);
-	}
-
-	static void nglConstructBox(nglBox* box)
-	{
-		CREATE_FN(void, __cdecl, 0x8C91A0, (void*));
-		sub_0x8C91A0(box);
-	}
-
-	static void nglSetBoxRect(nglBox* box, float x, float y, float width, float height)
-	{
-		CREATE_FN(void, __cdecl, 0x8C92C0, (void*, float, float, float, float));
-		sub_0x8C92C0(box, x, y, width, height);
-		CREATE_FN(void, __cdecl, 0x8C9310, (void*, float));
-		sub_0x8C9310(box, -9999.0f);
-	}
-
-	static void nglSetBoxColor(nglBox* box, nglColor_t color)
-	{
-		CREATE_FN(void, __cdecl, 0x8C92A0, (void*, nglColor_t));
-		sub_0x8C92A0(box, color);
-	}
-
-	static void nglDrawBox(nglBox* box)
-	{
-		CREATE_FN(void, __cdecl, 0x8C9440, (void*));
-		sub_0x8C9440(box);
-	}
-
-	static void nglDrawText(const char* text, int color, float x, float y, float scale_x, float scale_y)
-	{
-		CREATE_FN(int, __cdecl, 0x8D9820, (void*, const char*, float, float, float, int, float, float));
-		sub_0x8D9820(SM3_NGL_DEFAULT_FONT, text, x, y, -9999.0f, color, scale_x, scale_y);
-	}
-
-	static HWND GetGameWindow()
-	{
-		return *(HWND*)(*(DWORD*)0x10F9C2C + 4);
-	}
-
-	bool GetKeyDown(int vKey)
-	{
-		if (GetFocus() != GetGameWindow())
-			return false;
-
-		SHORT state = GetAsyncKeyState(vKey);
-		this->m_keys_down[vKey] |= (state < 0 && !this->m_keys_down[vKey]);
-		if (state == 0 && this->m_keys_down[vKey])
-		{
-			this->m_keys_down[vKey] = false;
-			return true;
-		}
-		return false;
-	}
-
-	bool GetKey(int vKey)
-	{
-		if (GetFocus() != GetGameWindow())
-			return false;
-
-		return GetAsyncKeyState(vKey) & 0x8000;
-	}
-
-	bool GetOnHide()
-	{
-		typedef bool(*hide_t)();
-		hide_t phide = (hide_t)this->OnHide;
-		if (phide != nullptr)
-		{
-			return phide();
-		}
-		return true;
-	}
-
-	bool GetOnShow()
-	{
-		typedef bool(*show_t)();
-		show_t pshow = (show_t)this->OnShow;
-		if (pshow != nullptr)
-		{
-			return pshow();
-		}
-		return true;
-	}
-
-	void GoBack()
-	{
-		if (this->m_currentItems->previous != nullptr)
-		{
-			this->m_currentItems = this->m_currentItems->previous;
-			this->m_width = (float)this->m_default_width;
-		}
-		else
-		{
-			if (this->GetOnHide())
-			{
-				this->IsOpen = false;
-			}
-		}
-	}
-
-	void ChangeList(ItemList* list)
-	{
-		ItemList* currentList = this->m_currentItems;
-		this->m_currentItems = list;
-		this->m_currentItems->previous = currentList;
-		int w, h;
-		nglGetTextSize(list->name, &w, &h, 0.7f, 0.7f);
-		this->m_default_width = (float)w + LEFT_PADDING + RIGHT_PADDING;
-	}
-
-	float GetWindowMaxHeight()
-	{
-		return NGL_WINDOW_MAX_HEIGHT - this->m_window_pos_y;
-	}
-
-	float GetMaxItemY()
-	{
-		return this->GetWindowMaxHeight() - BOTTOM_PADDING - TITLE_TOP_PADDING - (float)this->m_down_arrow_height - BOTTOM_PADDING;
-	}
-
-	bool CanScrollDown()
-	{
-		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
-		return !lastItem->is_visible;
-	}
-
-	float GetDownArrowsY()
-	{
-		return this->GetWindowMaxHeight() - (float)this->m_down_arrow_height - BOTTOM_PADDING;
-	}
-
-	float GetUpArrowsY()
-	{
-		return this->m_window_pos_y + (float)this->m_default_height;
-	}
-
-	bool CanScrollUp()
-	{
-		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
-		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
-		return this->m_currentItems->selected_item_index != 0 && lastItem->pos_y > this->GetMaxItemY();
-	}
-
-	float GetMinItemY()
-	{
-		float result = this->GetUpArrowsY();
-		if (this->CanScrollUp())
-		{
-			result += ((float)this->m_up_arrow_height + BOTTOM_PADDING);
-		}
-		return result;
-	}
-
-public:
-	bool IsOpen;
-	void* OnHide;
-	void* OnShow;
-
-	NGLMenu(const char* windowText, float x, float y)
-	{
-		this->IsOpen = false;
-		this->m_currentItems = &this->m_items;
-		this->OnShow = nullptr;
-		this->OnHide = nullptr;
-		this->m_name = windowText;
-		this->m_items.name = windowText;
-		this->m_window_pos_x = x;
-		this->m_window_pos_y = y;
-		nglConstructBox(&this->m_ngl_box_data);
-		int defaultWidth, defaultHeight;
-		nglGetTextSize(windowText, &defaultWidth, &defaultHeight, 0.7f, 0.7f);
-		this->m_default_width = (float)defaultWidth + LEFT_PADDING + RIGHT_PADDING;
-		this->m_default_height = (float)defaultHeight + TITLE_TOP_PADDING + BOTTOM_PADDING;
-		nglGetTextSize(DOWN_ARROW, &this->m_down_arrow_width, &this->m_down_arrow_height, 0.7f, 0.7f);
-		nglGetTextSize(UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, 0.7f, 0.7f);
-		this->m_width = (float)this->m_default_width;
-		this->m_height = (float)this->m_default_height;
-		nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
-	}
-
-	NGLMenuItem* AddItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
-	{
-		return this->m_items.MenuAddItem(this, type, text, valuePtr, callbackArg);
-	}
-
-	void CallCurrentCallback()
-	{
-		if (this->m_current_callback.callback_ptr != nullptr)
-		{
-			typedef void(*itemcallback_t)(void*);
-			itemcallback_t callback = (itemcallback_t)this->m_current_callback.callback_ptr;
-			callback(this->m_current_callback.callback_arg);
-		}
-	}
-
-	void ResetCurrentCallback()
-	{
-		this->m_current_callback.callback_ptr = nullptr;
-		this->m_current_callback.callback_arg = nullptr;
-	}
-
-	void Draw()
-	{
-		if (!this->IsOpen)
-			return;
-
-		if (this->m_currentItems->items.size() > 0)
-		{
-			float width = this->m_default_width;
-			if (this->CanScrollUp())
-			{
-				width = max(width, (float)this->m_up_arrow_width + LEFT_PADDING + RIGHT_PADDING);
-			}
-			if (this->CanScrollDown())
-			{
-				width = max(width, (float)this->m_down_arrow_width + LEFT_PADDING + RIGHT_PADDING);
-			}
-
-			nglSetBoxRect(&this->m_ngl_box_data, this->m_window_pos_x, this->m_window_pos_y, this->m_width, this->m_height);
-			nglDrawBox(&this->m_ngl_box_data);
-			nglDrawText(this->m_currentItems->name, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + LEFT_PADDING, this->m_window_pos_y + TITLE_TOP_PADDING, 0.7f, 0.7f);
-			float yStart = this->GetMinItemY();
-			float currentItemY = yStart;
-			NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
-			for (size_t i = 0; i < this->m_currentItems->items.size(); i++)
-			{
-				NGLMenuItem* item = this->m_currentItems->items[i];
-				item->pos_y = currentItemY;
-				char itemDisplayText[128];
-				nglColor_t currentTextColor = RGBA_TO_INT(255, 255, 255, 255);
-				bool selected = (i == this->m_currentItems->selected_item_index);
-				if (selected)
-				{
-					currentTextColor = RGBA_TO_INT(0, 255, 21, 255);
-				}
-				switch (item->type)
-				{
-				case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
-				{
-					bool val = *(bool*)item->value_ptr;
-					sprintf(itemDisplayText, "%s: %s", item->text, val ? "True" : "False");
-				}
-				break;
-
-				case E_NGLMENU_ITEM_TYPE::E_BUTTON:
-				{
-					strcpy(itemDisplayText, item->text);
-				}
-				break;
-
-				case E_NGLMENU_ITEM_TYPE::E_MENU:
-				{
-					sprintf(itemDisplayText, "%s: ...", item->text);
-				}
-				break;
-
-				case E_NGLMENU_ITEM_TYPE::E_SELECT:
-				{
-					if (item->subitems.items.size() > 0)
-					{
-						NGLMenuItem* selection = item->subitems.items[item->subitems.selected_item_index];
-						if (selection->type == E_NGLMENU_ITEM_TYPE::E_TEXT)
-						{
-							sprintf(itemDisplayText, "%s: %s", item->text, selection->text);
-						}
-					}
-				}
-				break;
-
-				default:
-					break;
-				}
-				nglGetTextSize(itemDisplayText, &item->text_width, &item->text_height, 0.7f, 0.7f);
-				bool overflow = item->pos_y > this->GetMaxItemY();
-				if (!overflow)
-				{
-					this->m_height = item->pos_y + (float)item->text_height + BOTTOM_PADDING;
-				}
-				else
-				{
-					if (item->display_pos_y > this->GetMaxItemY())
-					{
-						this->m_height = this->GetWindowMaxHeight();
-					}
-					else
-					{
-						this->m_height = item->display_pos_y + (float)item->text_height + BOTTOM_PADDING;
-					}
-				}
-				if (selected)
-				{
-					this->m_currentItems->scroll_y = item->pos_y;
-				}
-				if (lastItem->pos_y > this->GetMaxItemY())
-				{
-					item->display_pos_y = item->pos_y - this->m_currentItems->scroll_y + yStart;
-				}
-				else
-				{
-					item->display_pos_y = item->pos_y;
-				}
-				item->is_visible = item->display_pos_y >= yStart && item->display_pos_y <= this->GetMaxItemY();
-				if (item->is_visible)
-				{
-					float tmpWidth = (float)item->text_width + LEFT_PADDING + RIGHT_PADDING;
-					width = max(width, tmpWidth);
-					nglDrawText(itemDisplayText, currentTextColor, this->m_window_pos_x + LEFT_PADDING, item->display_pos_y, 0.7f, 0.7f);
-				}
-
-				currentItemY += (float)item->text_height + BOTTOM_PADDING;
-			}
-			if (this->CanScrollDown())
-			{
-				nglDrawText(DOWN_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + LEFT_PADDING, this->GetDownArrowsY(), 0.7f, 0.7f);
-			}
-			if (this->CanScrollUp())
-			{
-				nglDrawText(UP_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + LEFT_PADDING, this->GetUpArrowsY(), 0.7f, 0.7f);
-			}
-			this->m_width = width;
-		}
-	}
-
-	void DrawWatermark(const char* text)
-	{
-		nglDrawText(text, RGBA_TO_INT(255, 255, 255, 255), 10.0f, 10.0f, 1.0f, 1.0f);
-	}
-
-	bool KeyInputScroll(int vk)
-	{
-		return (this->GetKeyDown(vk) || (this->GetKey(VK_LSHIFT) && this->GetKey(vk)));
-	}
-
-	void HandleUserInput()
-	{
-		// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-
-		const int VK_A = 0x41;
-		const int VK_D = 0x44;
-		const int VK_W = 0x57;
-		const int VK_S = 0x53;
-
-		if (this->GetKeyDown(VK_INSERT))
-		{
-			if (this->IsOpen && this->GetOnHide())
-			{
-				this->IsOpen = false;
-			}
-			else if (!this->IsOpen && this->GetOnShow())
-			{
-				this->IsOpen = true;
-			}
-		}
-
-		if (!this->IsOpen)
-			return;
-
-		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
-
-		bool up = this->KeyInputScroll(VK_W) || this->KeyInputScroll(VK_UP);
-		bool down = this->KeyInputScroll(VK_S) || this->KeyInputScroll(VK_DOWN);
-		bool left = this->KeyInputScroll(VK_A) || this->KeyInputScroll(VK_LEFT);
-		bool right = this->KeyInputScroll(VK_D) || this->KeyInputScroll(VK_RIGHT);
-		bool back = this->GetKeyDown(VK_ESCAPE);
-		bool execute = this->GetKeyDown(VK_SPACE);
-		if (up)
-		{
-			if (this->m_currentItems->selected_item_index == 0)
-			{
-				size_t lastItemIndex = this->m_currentItems->items.size() - 1;
-				this->m_currentItems->selected_item_index = lastItemIndex;
-			}
-			else
-			{
-				this->m_currentItems->selected_item_index--;
-			}
-		}
-		if (down)
-		{
-			if (this->m_currentItems->selected_item_index == this->m_currentItems->items.size() - 1)
-			{
-				this->m_currentItems->selected_item_index = 0;
-			}
-			else
-			{
-				this->m_currentItems->selected_item_index++;
-			}
-		}
-
-		if (back)
-		{
-			this->GoBack();
-		}
-		if (execute)
-		{
-			switch (selectedItem->type)
-			{
-			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
-			{
-				if (selectedItem->value_ptr != nullptr)
-				{
-					bool* val = (bool*)selectedItem->value_ptr;
-					*val = !*val;
-				}
-			}
-			break;
-
-			case E_NGLMENU_ITEM_TYPE::E_BUTTON:
-			{
-				if (selectedItem->callback_ptr != nullptr)
-				{
-					this->m_current_callback.callback_ptr = selectedItem->callback_ptr;
-					this->m_current_callback.callback_arg = selectedItem->callback_arg;
-					this->IsOpen = !this->GetOnHide();
-				}
-			}
-			break;
-
-			case E_NGLMENU_ITEM_TYPE::E_MENU:
-			{
-				if (!selectedItem->subitems.items.empty())
-				{
-					selectedItem->subitems.name = selectedItem->text;
-					this->ChangeList(&selectedItem->subitems);
-				}
-			}
-			break;
-
-			default:
-				break;
-			}
-		}
-		if (left)
-		{
-			switch (selectedItem->type)
-			{
-			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
-			{
-				if (selectedItem->value_ptr != nullptr)
-				{
-					bool* val = (bool*)selectedItem->value_ptr;
-					*val = !*val;
-				}
-			}
-			break;
-
-			case E_NGLMENU_ITEM_TYPE::E_SELECT:
-			{
-				if (selectedItem->subitems.items.size() > 0)
-				{
-					int prevIndex = selectedItem->subitems.selected_item_index;
-					if (selectedItem->subitems.selected_item_index == 0)
-					{
-						selectedItem->subitems.selected_item_index = selectedItem->subitems.items.size() - 1;
-					}
-					else
-					{
-						selectedItem->subitems.selected_item_index--;
-					}
-					if (selectedItem->subitems.selected_item_index != prevIndex)
-					{
-						NGLMenuItem* selection = selectedItem->subitems.items[selectedItem->subitems.selected_item_index];
-						this->m_current_callback.callback_ptr = selection->callback_ptr;
-						this->m_current_callback.callback_arg = selection->callback_arg;
-					}
-				}
-			}
-			break;
-
-			default:
-				break;
-			}
-		}
-		if (right)
-		{
-			switch (selectedItem->type)
-			{
-			case E_NGLMENU_ITEM_TYPE::E_BOOLEAN:
-			{
-				if (selectedItem->value_ptr != nullptr)
-				{
-					bool* val = (bool*)selectedItem->value_ptr;
-					*val = !*val;
-				}
-			}
-			break;
-
-			case E_NGLMENU_ITEM_TYPE::E_SELECT:
-			{
-				if (selectedItem->subitems.items.size() > 0)
-				{
-					int prevIndex = selectedItem->subitems.selected_item_index;
-					if (selectedItem->subitems.selected_item_index == selectedItem->subitems.items.size() - 1)
-					{
-						selectedItem->subitems.selected_item_index = 0;
-					}
-					else
-					{
-						selectedItem->subitems.selected_item_index++;
-					}
-					if (selectedItem->subitems.selected_item_index != prevIndex)
-					{
-						NGLMenuItem* selection = selectedItem->subitems.items[selectedItem->subitems.selected_item_index];
-						this->m_current_callback.callback_ptr = selection->callback_ptr;
-						this->m_current_callback.callback_arg = selection->callback_arg;
-					}
-				}
-			}
-			break;
-
-			default:
-				break;
-			}
-		}
-	}
-};
-
-static NGLMenu* s_NGLMenu;
-static NGLMenu::NGLMenuItem* s_GameTimeSelect;
-static NGLMenu::NGLMenuItem* s_GlassHouseLevelSelect;
-static NGLMenu::NGLMenuItem* s_WarpButton;
 
 struct MenuRegionStrip
 {
@@ -1158,7 +1232,6 @@ static void LoadInterior(DWORD ptr)
 	vector3d pos1 = *(vector3d*)(ptr + 220);
 	vector3d pos2 = *(vector3d*)(ptr + 208);
 	pos2.y = pos1.y;
-	vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
 	if (pos2.y < 0.0f)
 	{
 		UnlockAllUndergroundInteriors();
@@ -1250,7 +1323,10 @@ static bool NGLMenuOnHide()
 
 static bool NGLMenuOnShow()
 {
-	if (IsGamePaused() || !IsInGame())
+	if (!IsInGame())
+		return false;
+
+	if (IsGamePaused())
 	{
 		return false;
 	}
@@ -1334,6 +1410,7 @@ int nglPresent_Hook(void)
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Remove FPS Limit", &bUnlockFPS, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Show Perf Info", &bShowStats, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Interface", &bDisableInterface, nullptr);
+		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, RAIMIHOOK_VER_STR, nullptr);
 
 		NGLMenu::NGLMenuItem* heroMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Hero", nullptr);
 		NGLMenu::NGLMenuItem* changeHeroMenu = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Change Hero", nullptr);
@@ -1343,9 +1420,11 @@ int nglPresent_Hook(void)
 			changeHeroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, hero, &ChangeHero, (void*)hero);
 		}
 		NGLMenu::NGLMenuItem* spawnPointsMenu = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Spawn Points", nullptr);
+		spawnPointsMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Nearest Spawn Point", SpawnToNearestSpawnPoint);
+		spawnPointsMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Default Spawn Point", &SpawnToPoint, (void*)1);
 		for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 		{
-			char* idxBuffer = new char[14];
+			char* idxBuffer = new char[20];
 			sprintf(idxBuffer, "Spawn Point %02d", (int)i);
 			spawnPointsMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, idxBuffer, &SpawnToPoint, (void*)i);
 		}
@@ -1364,7 +1443,7 @@ int nglPresent_Hook(void)
 		for (size_t i = 0; i < sizeof(s_WorldTimes) / sizeof(const char*); i++)
 		{
 			const char* worldTime = s_WorldTimes[i];
-			s_GameTimeSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_TEXT, worldTime, &SetWorldTime, (void*)(DWORD)i);
+			s_GameTimeSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_NONE, worldTime, &SetWorldTime, (void*)(DWORD)i);
 		}
 		s_GlassHouseLevelSelect = worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_SELECT, "Glass House Level", nullptr);
 		for (size_t i = 0; i < sizeof(s_GlassHouseLevels) / sizeof(int); i++)
@@ -1372,13 +1451,25 @@ int nglPresent_Hook(void)
 			int level = s_GlassHouseLevels[i];
 			char* levelNumBuffer = new char[2];
 			itoa(level, levelNumBuffer, 10);
-			s_GlassHouseLevelSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_TEXT, levelNumBuffer, &SetGlassHouseLevel, (void*)level);
+			s_GlassHouseLevelSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_NONE, levelNumBuffer, &SetGlassHouseLevel, (void*)level);
 		}
 		worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Pedestrians", &bDisablePedestrians);
 		worldMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Traffic", &bDisableTraffic);
 
+		NGLMenu::NGLMenuItem* cameraMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Camera", nullptr);
+		s_FovSlider = cameraMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_SELECT, "FOV", nullptr);
+		for (int i = SM3_CAMERA_MIN_FOV; i < SM3_CAMERA_MAX_FOV + 1; i++)
+		{
+			char* fovBuffer = new char[3];
+			itoa(i, fovBuffer, 10);
+			s_FovSlider->AddSubItem(E_NGLMENU_ITEM_TYPE::E_NONE, fovBuffer, &Set_s_CameraFOV, (void*)i);
+		}
+		s_FovSlider->subitems.selected_item_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+		cameraMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Default FOV", &SetCameraFovDefault);
+
 		NGLMenu::NGLMenuItem* missionManagerMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Mission Manager", nullptr);
-		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Terminate Mission", &TerminateCurrentMission, nullptr);
+		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
+		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
 		NGLMenu::NGLMenuItem* loadMissionMenu = missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Load Mission", nullptr);
 		for (size_t i = 0; i < sizeof(s_Missions) / sizeof(const char*); i++)
 		{
@@ -1423,14 +1514,15 @@ struct Sm3Game
 
 	void Update_Hook()
 	{
+		s_NGLMenu->CallCurrentCallback();
+		s_NGLMenu->ResetCurrentCallback();
+
+		*(bool*)0x1106991 = true;
+		*(bool*)0x1106978 = bShowStats;
 		if (!IsGamePaused())
 		{
-			s_NGLMenu->CallCurrentCallback();
-			s_NGLMenu->ResetCurrentCallback();
-
 			float* fixedDeltaTimePtr = (float*)0xD09604;
 
-			*(bool*)0x1106978 = bShowStats;
 			*(bool*)0xE89AFC = bGodMode;
 			if (bUnlockFPS)
 			{
@@ -1453,6 +1545,7 @@ struct Sm3Game
 			}
 			*(bool*)0xE89AFD = bInstantKill;
 		}
+		SetCameraFov(s_CameraFOV);
 		original_Sm3Game__Update(this);
 	}
 };
@@ -1509,7 +1602,7 @@ struct Megacity
 			vector3d* pos = (vector3d*)((DWORD)region + 220);
 			char* hero = GetCurrentHero();
 			vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
-			if (strcmp(hero, "ch_playergoblin") == 0 && strncmp(name, "DBG", 3) == 0 && vector3d_Distance(pos, heroPos) < 130.0f)
+			if (strncmp(name, "DBG", 3) == 0)
 			{
 				// the game forces the daily bugle interior to unload if you switch to new goblin
 				// by hooking this function, we prevent that
@@ -1553,12 +1646,14 @@ struct player_interface
 {
 	static const uintptr_t UPDATE_COMBO_METER_ADDRESS = 0x55B5E0;
 
-	signed int UpdateComboMeter_Hook(float a2, signed int a3)
+	signed int UpdateComboMeter_Hook(float combo_hits, signed int a3)
 	{
 		if (bInfiniteCombo)
-			a2 = 10000.0f;
+		{
+			*(float*)((DWORD*)this + 219) = 1000.0f;
+		}
 
-		return original_player_interface__UpdateComboMeter(this, a2, a3);
+		return original_player_interface__UpdateComboMeter(this, combo_hits, a3);
 	}
 };
 
