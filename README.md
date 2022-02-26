@@ -1,5 +1,7 @@
 # RaimiHook
  A debug menu for Spider-Man 3: The Game on PC
+ 
+ ![Spider-Man 3 Logo](/images/sm3.png)
 
 ### (Ниже следует перевод на Русский язык)
 
@@ -8,7 +10,7 @@
 This mod works only with a specific version of the game. It works with a pirated version of the game because the original build is obfuscated. I do not encourage piracy but you can find the build online.
 
 # Installation
-You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_7).
+You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_8).
 Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 
 # How to use
@@ -21,13 +23,16 @@ Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 - You can use the **Left shift** key to scroll faster
 - Use the **Escape (esc)** key to go back or close the menu
 
+# Controls for Xbox 360 gamepads
+![Controls for Xbox 360 gamepads](/images/xbox_controls_en.png)
+
 
 ### (Русский)
 # Перед установкой
 Этот мод работает только на конкретный версии игры. Он работает только на крякнутую аглийскую версию потому что оригинальный буилд зашифрован. Я не поощряю пиратство, но вы можете найти этот буилд в интернет.
 
 # Установка
-Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_7).
+Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_8).
 Когда вы его скачайте, копируйте `d3d9.dll` в папке игрой,
 
 # Как использовать
@@ -39,3 +44,6 @@ Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 - Нажмите на клавиши со стрелками **Лево** и **Права**, **A** и **D** для варианты с множественным выбором
 - Нажмите на клавишу **Левый shift** чтобы прокручивать быстрее
 - Нажмите на клавишу **Escape (esc)** чтобы идти назад или закрыть меню
+
+# Управление для Xbox 360 геймпадов
+![Управление для Xbox 360 геймпадов](/images/xbox_controls_ru.png)
