@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 #include "d3d9_proxy.h"
+#include "xinput1_1.h"
 
 #define SM3_FIXED_DELTA_TIME 0.033333335f
 #define SM3_PLAYER_MAX_HEALTH 2000
@@ -15,7 +16,7 @@
 #define SM3_CAMERA_MIN_FOV 1
 #define SM3_CAMERA_MAX_FOV 180
 
-#define RAIMIHOOK_VER_STR "RaimiHook Version: 7"
+#define RAIMIHOOK_VER_STR "RaimiHook Version: 8"
 
 #define CREATE_FN(RETURN_TYPE, CALLING_CONV, RVA, ARGS) \
 typedef RETURN_TYPE(CALLING_CONV* sub_##RVA##_t)ARGS; \
@@ -64,7 +65,7 @@ public:
 		{
 			NGLMenuItem* item = new NGLMenuItem;
 			item->type = type;
-			item->text = text;
+			strncpy(item->text, text, 256);
 			item->value_ptr = valuePtr;
 			item->callback_arg = callbackArg;
 			nglGetTextSize(text, &item->text_width, &item->text_height, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
@@ -77,7 +78,7 @@ public:
 	{
 		NGLMenu* main = nullptr;
 		E_NGLMENU_ITEM_TYPE type = E_NGLMENU_ITEM_TYPE::E_NONE;
-		const char* text = "";
+		char text[256] = { 0 };
 		int text_height = 0;
 		int text_width = 0;
 		float pos_y = 0.0f;
@@ -120,9 +121,13 @@ private:
 	int m_up_arrow_width;
 	int m_up_arrow_height;
 	ItemList m_items;
-	ItemList* m_currentItems;
+	ItemList* m_current_items;
 	bool m_keys_down[512];
 	NGLButtonCallback m_current_callback;
+	XInputGetState_t m_XInputGetState;
+	DWORD m_xinput_status;
+	XINPUT_STATE m_xinput_current_state;
+	ULONGLONG m_xinput_buttons_down[0x8000];
 
 	static void nglGetTextSize(const char* text, int* refWidth, int* refHeight, float scale_x, float scale_y)
 	{
@@ -167,11 +172,18 @@ private:
 		return *(HWND*)(*(DWORD*)0x10F9C2C + 4);
 	}
 
+	static FARPROC GetXInputFunction(LPCSTR lpProcName)
+	{
+		HMODULE xinputModule = GetModuleHandleA(XINPUT_MODULE);
+		if (xinputModule == nullptr)
+		{
+			return nullptr;
+		}
+		return GetProcAddress(xinputModule, lpProcName);
+	}
+
 	bool GetKeyDown(int vKey)
 	{
-		if (GetFocus() != GetGameWindow())
-			return false;
-
 		SHORT state = GetAsyncKeyState(vKey);
 		this->m_keys_down[vKey] |= (state < 0 && !this->m_keys_down[vKey]);
 		if (state == 0 && this->m_keys_down[vKey])
@@ -184,9 +196,6 @@ private:
 
 	bool GetKey(int vKey)
 	{
-		if (GetFocus() != GetGameWindow())
-			return false;
-
 		return GetAsyncKeyState(vKey) & 0x8000;
 	}
 
@@ -214,9 +223,9 @@ private:
 
 	void GoBack()
 	{
-		if (this->m_currentItems->previous != nullptr)
+		if (this->m_current_items->previous != nullptr)
 		{
-			this->m_currentItems = this->m_currentItems->previous;
+			this->m_current_items = this->m_current_items->previous;
 			this->m_width = (float)this->m_default_width;
 		}
 		else
@@ -227,9 +236,9 @@ private:
 
 	void ChangeList(ItemList* list)
 	{
-		ItemList* currentList = this->m_currentItems;
-		this->m_currentItems = list;
-		this->m_currentItems->previous = currentList;
+		ItemList* currentList = this->m_current_items;
+		this->m_current_items = list;
+		this->m_current_items->previous = currentList;
 		int w, h;
 		nglGetTextSize(list->name, &w, &h, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
 		this->m_default_width = (float)w + SM3_NGL_WINDOW_ITEM_LEFT_PADDING + SM3_NGL_WINDOW_ITEM_RIGHT_PADDING;
@@ -247,7 +256,7 @@ private:
 
 	bool CanScrollDown()
 	{
-		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
+		NGLMenuItem* lastItem = this->m_current_items->items[this->m_current_items->items.size() - 1];
 		return !lastItem->is_visible;
 	}
 
@@ -263,9 +272,9 @@ private:
 
 	bool CanScrollUp()
 	{
-		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
-		NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
-		return this->m_currentItems->selected_item_index != 0 && lastItem->pos_y > this->GetMaxItemY();
+		NGLMenuItem* selectedItem = this->m_current_items->items[this->m_current_items->selected_item_index];
+		NGLMenuItem* lastItem = this->m_current_items->items[this->m_current_items->items.size() - 1];
+		return this->m_current_items->selected_item_index != 0 && lastItem->pos_y > this->GetMaxItemY();
 	}
 
 	float GetMinItemY()
@@ -286,7 +295,7 @@ public:
 	NGLMenu(const char* windowText, float x, float y)
 	{
 		this->IsOpen = false;
-		this->m_currentItems = &this->m_items;
+		this->m_current_items = &this->m_items;
 		this->OnShow = nullptr;
 		this->OnHide = nullptr;
 		this->m_name = windowText;
@@ -303,11 +312,35 @@ public:
 		this->m_width = (float)this->m_default_width;
 		this->m_height = (float)this->m_default_height;
 		nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
+		this->m_XInputGetState = (XInputGetState_t)GetXInputFunction("XInputGetState");
+		this->m_xinput_status = 0;
+		memset(&this->m_xinput_current_state, 0, sizeof(XINPUT_STATE));
+		memset(this->m_xinput_buttons_down, 0, sizeof(this->m_xinput_buttons_down));
 	}
 
 	NGLMenuItem* AddItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
 	{
 		return this->m_items.MenuAddItem(this, type, text, valuePtr, callbackArg);
+	}
+
+	DWORD GetXInputStatus()
+	{
+		return this->m_xinput_status;
+	}
+
+	const char* GetXInputStatusStr()
+	{
+		switch (this->m_xinput_status)
+		{
+		case ERROR_SUCCESS:
+			return "ERROR_SUCCESS";
+
+		case ERROR_DEVICE_NOT_CONNECTED:
+			return "ERROR_DEVICE_NOT_CONNECTED";
+
+		default:
+			return "UNKNOWN";
+		}
 	}
 
 	void CallCurrentCallback()
@@ -331,7 +364,7 @@ public:
 		if (!this->IsOpen)
 			return;
 
-		if (this->m_currentItems->items.size() > 0)
+		if (this->m_current_items->items.size() > 0)
 		{
 			float width = this->m_default_width;
 			if (this->CanScrollUp())
@@ -345,17 +378,17 @@ public:
 
 			nglSetBoxRect(&this->m_ngl_box_data, this->m_window_pos_x, this->m_window_pos_y, this->m_width, this->m_height);
 			nglDrawBox(&this->m_ngl_box_data);
-			nglDrawText(this->m_currentItems->name, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, this->m_window_pos_y + SM3_NGL_WINDOW_TITLE_TOP_PADDING, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
+			nglDrawText(this->m_current_items->name, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + SM3_NGL_WINDOW_ITEM_LEFT_PADDING, this->m_window_pos_y + SM3_NGL_WINDOW_TITLE_TOP_PADDING, SM3_NGL_WINDOW_FONT_SCALE, SM3_NGL_WINDOW_FONT_SCALE);
 			float yStart = this->GetMinItemY();
 			float currentItemY = yStart;
-			NGLMenuItem* lastItem = this->m_currentItems->items[this->m_currentItems->items.size() - 1];
-			for (size_t i = 0; i < this->m_currentItems->items.size(); i++)
+			NGLMenuItem* lastItem = this->m_current_items->items[this->m_current_items->items.size() - 1];
+			for (size_t i = 0; i < this->m_current_items->items.size(); i++)
 			{
-				NGLMenuItem* item = this->m_currentItems->items[i];
+				NGLMenuItem* item = this->m_current_items->items[i];
 				item->pos_y = currentItemY;
 				char itemDisplayText[128];
 				nglColor_t currentTextColor = RGBA_TO_INT(255, 255, 255, 255);
-				bool selected = (i == this->m_currentItems->selected_item_index);
+				bool selected = (i == this->m_current_items->selected_item_index);
 				if (selected)
 				{
 					currentTextColor = RGBA_TO_INT(0, 255, 21, 255);
@@ -420,11 +453,11 @@ public:
 				}
 				if (selected)
 				{
-					this->m_currentItems->scroll_y = item->pos_y;
+					this->m_current_items->scroll_y = item->pos_y;
 				}
 				if (lastItem->pos_y > this->GetMaxItemY())
 				{
-					item->display_pos_y = item->pos_y - this->m_currentItems->scroll_y + yStart;
+					item->display_pos_y = item->pos_y - this->m_current_items->scroll_y + yStart;
 				}
 				else
 				{
@@ -462,6 +495,35 @@ public:
 		return (this->GetKeyDown(vk) || (this->GetKey(VK_LSHIFT) && this->GetKey(vk)));
 	}
 
+	bool XInputGetButton(DWORD button)
+	{
+		if (this->m_XInputGetState == nullptr || this->m_xinput_status != ERROR_SUCCESS)
+			return false;
+
+		return (bool)(this->m_xinput_current_state.Gamepad.wButtons & button);
+	}
+
+	bool XInputGetButtonDown(DWORD button)
+	{
+		if (this->m_XInputGetState == nullptr || this->m_xinput_status != ERROR_SUCCESS)
+			return false;
+
+		ULONGLONG ticks = GetTickCount64();
+		bool isPressed = (bool)(this->m_xinput_current_state.Gamepad.wButtons & button);
+		if (isPressed && ((ticks - this->m_xinput_buttons_down[button]) > 300)) // 300ms is good enough
+		{
+			this->m_xinput_buttons_down[button] = ticks;
+			return true;
+		}
+		return false;
+	}
+
+	bool XInputGetButtonScroll(DWORD button)
+	{
+		bool lt = (bool)this->m_xinput_current_state.Gamepad.bLeftTrigger;
+		return (this->XInputGetButtonDown(button) || (lt && this->XInputGetButton(button)));
+	}
+
 	void HandleUserInput()
 	{
 		// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -471,7 +533,15 @@ public:
 		const int VK_W = 0x57;
 		const int VK_S = 0x53;
 
-		if (this->GetKeyDown(VK_INSERT))
+		if (GetFocus() != GetGameWindow())
+			return;
+
+		if (this->m_XInputGetState != nullptr)
+		{
+			this->m_xinput_status = m_XInputGetState(0, &this->m_xinput_current_state);
+		}
+
+		if (this->GetKeyDown(VK_INSERT) || this->XInputGetButtonDown(XINPUT_GAMEPAD_LEFT_THUMB))
 		{
 			this->IsOpen = (!(this->IsOpen && this->GetOnHide()) && (!this->IsOpen && this->GetOnShow()));
 		}
@@ -479,35 +549,35 @@ public:
 		if (!this->IsOpen)
 			return;
 
-		NGLMenuItem* selectedItem = this->m_currentItems->items[this->m_currentItems->selected_item_index];
+		NGLMenuItem* selectedItem = this->m_current_items->items[this->m_current_items->selected_item_index];
 
-		bool up = this->KeyInputScroll(VK_W) || this->KeyInputScroll(VK_UP);
-		bool down = this->KeyInputScroll(VK_S) || this->KeyInputScroll(VK_DOWN);
-		bool left = this->KeyInputScroll(VK_A) || this->KeyInputScroll(VK_LEFT);
-		bool right = this->KeyInputScroll(VK_D) || this->KeyInputScroll(VK_RIGHT);
-		bool back = this->GetKeyDown(VK_ESCAPE);
-		bool execute = this->GetKeyDown(VK_SPACE);
+		bool up = this->KeyInputScroll(VK_W) || this->KeyInputScroll(VK_UP) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_UP);
+		bool down = this->KeyInputScroll(VK_S) || this->KeyInputScroll(VK_DOWN) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_DOWN);
+		bool left = this->KeyInputScroll(VK_A) || this->KeyInputScroll(VK_LEFT) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_LEFT);
+		bool right = this->KeyInputScroll(VK_D) || this->KeyInputScroll(VK_RIGHT) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_RIGHT);
+		bool back = this->GetKeyDown(VK_ESCAPE) || this->XInputGetButtonDown(XINPUT_GAMEPAD_B);
+		bool execute = this->GetKeyDown(VK_SPACE) || this->XInputGetButtonDown(XINPUT_GAMEPAD_A);
 		if (up)
 		{
-			if (this->m_currentItems->selected_item_index == 0)
+			if (this->m_current_items->selected_item_index == 0)
 			{
-				size_t lastItemIndex = this->m_currentItems->items.size() - 1;
-				this->m_currentItems->selected_item_index = lastItemIndex;
+				size_t lastItemIndex = this->m_current_items->items.size() - 1;
+				this->m_current_items->selected_item_index = lastItemIndex;
 			}
 			else
 			{
-				this->m_currentItems->selected_item_index--;
+				this->m_current_items->selected_item_index--;
 			}
 		}
 		if (down)
 		{
-			if (this->m_currentItems->selected_item_index == this->m_currentItems->items.size() - 1)
+			if (this->m_current_items->selected_item_index == this->m_current_items->items.size() - 1)
 			{
-				this->m_currentItems->selected_item_index = 0;
+				this->m_current_items->selected_item_index = 0;
 			}
 			else
 			{
-				this->m_currentItems->selected_item_index++;
+				this->m_current_items->selected_item_index++;
 			}
 		}
 
@@ -645,6 +715,7 @@ static NGLMenu::NGLMenuItem* s_GlassHouseLevelSelect;
 static NGLMenu::NGLMenuItem* s_WarpButton;
 static NGLMenu::NGLMenuItem* s_CameraModeSelect;
 static NGLMenu::NGLMenuItem* s_FovSlider;
+static NGLMenu::NGLMenuItem* s_XInputStatusLabel;
 
 struct vector3d
 {
@@ -731,6 +802,11 @@ struct entity_node
 static entity* GetLocalPlayerEntity()
 {
 	return (entity*)*(void**)(*(DWORD*)0x10CFEF0 + 532);
+}
+
+static entity_node* GetEntityList()
+{
+	return *(entity_node**)0xDEB84C;
 }
 
 static bool IsInGame()
@@ -856,6 +932,25 @@ static vector3d* GetNearestSpawnPoint()
 	return point;
 }
 
+static vector3d* GetFurthestSpawnPoint()
+{
+	float maxDist = -1.0f;
+	vector3d* point = nullptr;
+	vector3d* spawnPoints = GetSpawnPoints();
+	entity* localPlayer = GetLocalPlayerEntity();
+	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
+	{
+		vector3d* currentPoint = spawnPoints + i;
+		float dist = vector3d_Distance(localPlayer->GetPosition(), currentPoint);
+		if (dist > maxDist)
+		{
+			point = currentPoint;
+			maxDist = dist;
+		}
+	}
+	return point;
+}
+
 static void SpawnToPoint(size_t idx)
 {
 	vector3d* spawnPoints = GetSpawnPoints();
@@ -896,6 +991,34 @@ static void KillHero()
 	player->SetHealth(0);
 }
 
+enum class E_MISSION_SCRIPT_TYPE
+{
+	E_NONE,
+	E_SPAWN_POINT, // teleport player to a spawn point
+	E_LOAD_REGION, // load and teleport player to a region / interrior
+	E_POSITION // teleport player to a specific position
+};
+
+typedef struct MissionScript
+{
+	const char* instance;
+	E_MISSION_SCRIPT_TYPE script_type;
+	union ScriptData
+	{
+		size_t spawn_point_index;
+		const char* region_name;
+		vector3d absolute_position;
+		ScriptData() { memset(this, 0, sizeof(ScriptData)); }
+		ScriptData(size_t value) { this->spawn_point_index = value; }
+		ScriptData(const char* value) { this->region_name = value; }
+		ScriptData(vector3d value) { this->absolute_position = value; }
+	} script_data;
+	union
+	{
+		DWORD region;
+	} cache;
+} MissionScript;
+
 static const char* s_Heroes[] =
 {
 	"ch_spiderman",
@@ -904,41 +1027,41 @@ static const char* s_Heroes[] =
 	"ch_peter"
 };
 
-static const char* s_Missions[] = /* MEGACITY.PCPACK */
+static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 {
-	"SWINGING_TUTORIAL_GO",
-	"STORY_INSTANCE_MAD_BOMBER_1",
-	"STORY_INSTANCE_MAD_BOMBER_2",
-	"STORY_INSTANCE_MAD_BOMBER_3",
-	//"STORY_INSTANCE_MAD_BOMBER_4", // only loads some times
-	//"STORY_INSTANCE_MAD_BOMBER_5", // only loads when you are near daily bugle
-	"STORY_INSTANCE_LIZARD_1",
-	"STORY_INSTANCE_LIZARD_2",
-	"STORY_INSTANCE_LIZARD_3",
-	"GANG_INSTANCE_ATOMIC_PUNK_01",
-	"GANG_INSTANCE_ATOMIC_PUNK_05",
-	"GANG_INSTANCE_ATOMIC_PUNK_07",
-	//"GANG_INSTANCE_GOTHIC_LOLITA_01", // stucks on loading
-	//"GANG_INSTANCE_GOTHIC_LOLITA_02", // automatically fails the mission?
-	//"GANG_INSTANCE_GOTHIC_LOLITA_04", // stucks on loading
-	"GANG_INSTANCE_GOTHIC_LOLITA_05",
-	//"GANG_INSTANCE_PAN_ASIAN_01", // mission fails to load
-	"GANG_INSTANCE_PAN_ASIAN_05",
-	"GANG_INSTANCE_PAN_ASIAN_06",
-	"GANG_INSTANCE_PAN_ASIAN_07",
-	"LOCATION_INSTANCE_DEWOLFE_1",
-	"LOCATION_INSTANCE_DEWOLFE_3",
-	"LOCATION_INSTANCE_DEWOLFE_4",
-	//"STORY_INSTANCE_SCORPION_2", // stucks on loading
-	"STORY_INSTANCE_SCORPION_3",
-	"STORY_INSTANCE_SCORPION_5",
-	"STORY_INSTANCE_KINGPIN_1",
-	//"STORY_INSTANCE_KINGPIN_2", // stucks on loading
-	"LOCATION_INSTANCE_CONNORS_1",
-	"LOCATION_INSTANCE_CONNORS_4",
-	"STORY_INSTANCE_MOVIE_1",
-	"STORY_INSTANCE_MOVIE_3",
-	"STORY_INSTANCE_MOVIE_4"
+	{ "SWINGING_TUTORIAL_GO", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MAD_BOMBER_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MAD_BOMBER_2", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MAD_BOMBER_3", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MAD_BOMBER_4", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)1 }, // we must be near the place where that mission starts
+	{ "STORY_INSTANCE_MAD_BOMBER_5", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)1 }, // we must be near daily bugle
+	{ "STORY_INSTANCE_LIZARD_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_LIZARD_2", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_LIZARD_3", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_ATOMIC_PUNK_01", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_ATOMIC_PUNK_05", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_ATOMIC_PUNK_07", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_GOTHIC_LOLITA_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "N08I01" }, // we must be inside that clothing store
+	{ "GANG_INSTANCE_GOTHIC_LOLITA_02", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "M07I01" }, // we must be near the toy factory
+	{ "GANG_INSTANCE_GOTHIC_LOLITA_04", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)0 }, // we must be at the area where the mission starts
+	{ "GANG_INSTANCE_GOTHIC_LOLITA_05", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_PAN_ASIAN_01", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)4 }, // we must be at the area where the mission starts
+	{ "GANG_INSTANCE_PAN_ASIAN_05", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_PAN_ASIAN_06", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_PAN_ASIAN_07", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "LOCATION_INSTANCE_DEWOLFE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "LOCATION_INSTANCE_DEWOLFE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "LOCATION_INSTANCE_DEWOLFE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_SCORPION_2", E_MISSION_SCRIPT_TYPE::E_POSITION, vector3d({ 3551.81f, 142.991f, 552.708f })}, // we must be at the area where the mission starts
+	{ "STORY_INSTANCE_SCORPION_3", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_SCORPION_5", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_KINGPIN_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_KINGPIN_2", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "MD2I01" }, // we must be inside kingpin's mansion
+	{ "LOCATION_INSTANCE_CONNORS_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "LOCATION_INSTANCE_CONNORS_4", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MOVIE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MOVIE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
 };
 
 static const char* s_Cutscenes[] =
@@ -997,6 +1120,28 @@ static void TogglePause()
 	sub_0x7F6E10(*(void**)0xDE7A1C, 4);
 }
 
+DWORD GetRegionByName(const char* s)
+{
+	DWORD regionsPtr = *(DWORD*)0x00F23780;
+	if (regionsPtr != 0)
+	{
+		DWORD regionStart = *(DWORD*)regionsPtr;
+		if (regionStart != 0)
+		{
+			for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
+			{
+				DWORD region = (regionStart + (i * SM3_SIZE_OF_REGION));
+				char* name = *(char**)(region + 188);
+				if (strcmp(name, s) == 0)
+				{
+					return region;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 static void UnlockAllUndergroundInteriors()
 {
 	DWORD regionsPtr = *(DWORD*)0x00F23780;
@@ -1018,7 +1163,7 @@ static void UnlockAllUndergroundInteriors()
 
 static int GetGlassHouseLevel()
 {
-	DWORD* ptr = *(DWORD**)0xE8FCD4;
+	int* ptr = *(int**)0xE8FCD4;
 	if (ptr != nullptr)
 	{
 		return ptr[4];
@@ -1031,7 +1176,7 @@ static int GetGlassHouseLevel()
 
 static void SetGlassHouseLevel(int level)
 {
-	DWORD* ptr = *(DWORD**)0xE8FCD4;
+	int* ptr = *(int**)0xE8FCD4;
 	if (ptr != nullptr)
 	{
 		ptr[4] = level;
@@ -1048,16 +1193,6 @@ static void CompleteCurrentMission()
 {
 	CREATE_FN(void*, __thiscall, 0x5710E0, (void*, bool, bool));
 	sub_0x5710E0(*(void**)0xDE7D88, true, false);
-}
-
-static void LoadStoryInstance(const char* instance)
-{
-	// nuke current mission
-	CREATE_FN(void, __fastcall, 0x570340, (void*));
-	sub_0x570340(*(void**)0xDE7D88);
-
-	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
-	sub_0x571C60(*(void**)0xDE7D88, instance);
 }
 
 static DWORD GetWorldTime()
@@ -1154,13 +1289,14 @@ static void SetCameraFovDefault()
 }
 
 static void* s_CurrentTimer;
+static void* s_ComboMeter;
 
 static void EndCurrentTimer()
 {
-	if (s_CurrentTimer == nullptr)
-		return;
-
-	*(float*)((DWORD)s_CurrentTimer + 48) = 0.0f;
+	if (s_CurrentTimer != nullptr)
+	{
+		*(float*)((DWORD)s_CurrentTimer + 48) = 0.0f;
+	}
 }
 
 struct MenuRegionStrip
@@ -1250,8 +1386,7 @@ static void LoadInterior(DWORD ptr)
 
 static void KillAllEntities()
 {
-	entity_node* entityList = *(entity_node**)0xDEB84C;
-	for (entity_node* node = entityList; (node != nullptr); node = node->next)
+	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
 		entity* currentEntity = node->GetEntity();
 		if (currentEntity != GetLocalPlayerEntity())
@@ -1268,8 +1403,7 @@ static void KillAllEntities()
 static void TeleportAllEntitiesToMe()
 {
 	entity* localPlayer = GetLocalPlayerEntity();
-	entity_node* entityList = *(entity_node**)0xDEB84C;
-	for (entity_node* node = entityList; (node != nullptr); node = node->next)
+	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
 		entity* currentEntity = node->GetEntity();
 		if (currentEntity != localPlayer)
@@ -1288,8 +1422,7 @@ static void TeleportToNearestEntity()
 	float minDist = (float)0xFFFFFF;
 	entity* target = nullptr;
 	entity* localPlayer = GetLocalPlayerEntity();
-	entity_node* entityList = *(entity_node**)0xDEB84C;
-	for (entity_node* node = entityList; (node != nullptr); node = node->next)
+	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
 		entity* currentEntity = node->GetEntity();
 		if (currentEntity != localPlayer)
@@ -1310,6 +1443,66 @@ static void TeleportToNearestEntity()
 	{
 		TeleportHero(target->GetPosition());
 	}
+}
+
+static void LoadStoryInstance(const char* instance)
+{
+	// nuke current mission
+	CREATE_FN(void, __fastcall, 0x570340, (void*));
+	sub_0x570340(*(void**)0xDE7D88);
+
+	vector3d* furthestPoint = GetFurthestSpawnPoint();
+	if (furthestPoint != nullptr)
+	{
+		// just to make sure that we get rid of all the entities
+		TeleportHero(furthestPoint);
+	}
+
+	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
+	sub_0x571C60(*(void**)0xDE7D88, instance);
+}
+
+static void LoadMissionScript(MissionScript* mission)
+{
+	// nuke current mission
+	CREATE_FN(void, __fastcall, 0x570340, (void*));
+	sub_0x570340(*(void**)0xDE7D88);
+
+	vector3d* furthestPoint = GetFurthestSpawnPoint();
+	if (furthestPoint != nullptr)
+	{
+		// just to make sure that we get rid of all the entities
+		TeleportHero(furthestPoint);
+	}
+
+	switch (mission->script_type)
+	{
+	case E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT:
+		SpawnToPoint(mission->script_data.spawn_point_index);
+		break;
+	
+	case E_MISSION_SCRIPT_TYPE::E_LOAD_REGION:
+		if (mission->cache.region == 0)
+		{
+			mission->cache.region = GetRegionByName(mission->script_data.region_name);
+		}
+		if (mission->cache.region == 0) // if not found
+		{
+			return;
+		}
+		LoadInterior(mission->cache.region);
+		break;
+
+	case E_MISSION_SCRIPT_TYPE::E_POSITION:
+		TeleportHero(&mission->script_data.absolute_position);
+		break;
+
+	default:
+		break;
+	}
+
+	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
+	sub_0x571C60(*(void**)0xDE7D88, mission->instance);
 }
 
 static bool NGLMenuOnHide()
@@ -1410,6 +1603,7 @@ int nglPresent_Hook(void)
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Remove FPS Limit", &bUnlockFPS, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Show Perf Info", &bShowStats, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Interface", &bDisableInterface, nullptr);
+		s_XInputStatusLabel = globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "XInput Status: 0", nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, RAIMIHOOK_VER_STR, nullptr);
 
 		NGLMenu::NGLMenuItem* heroMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Hero", nullptr);
@@ -1471,10 +1665,10 @@ int nglPresent_Hook(void)
 		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
 		missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
 		NGLMenu::NGLMenuItem* loadMissionMenu = missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Load Mission", nullptr);
-		for (size_t i = 0; i < sizeof(s_Missions) / sizeof(const char*); i++)
+		for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(MissionScript); i++)
 		{
-			const char* mission = s_Missions[i];
-			loadMissionMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, mission, &LoadStoryInstance, (void*)mission);
+			MissionScript* mission = s_MissionsScripts + i;
+			loadMissionMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, mission->instance, &LoadMissionScript, mission);
 		}
 		NGLMenu::NGLMenuItem* cutscenesMenu = missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Load Cutscene", nullptr);
 		for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
@@ -1502,6 +1696,10 @@ int nglPresent_Hook(void)
 	}
 	s_NGLMenu->Draw();
 	s_NGLMenu->HandleUserInput();
+	if (s_NGLMenu->IsOpen)
+	{
+		sprintf(s_XInputStatusLabel->text, "XInput Status: %s", s_NGLMenu->GetXInputStatusStr());
+	}
 	return original_nglPresent();
 }
 
@@ -1544,6 +1742,10 @@ struct Sm3Game
 				DisableTraffic();
 			}
 			*(bool*)0xE89AFD = bInstantKill;
+			if (bInfiniteCombo && s_ComboMeter != nullptr)
+			{
+				*(float*)((DWORD*)s_ComboMeter + 219) = 1000.0f;
+			}
 		}
 		SetCameraFov(s_CameraFOV);
 		original_Sm3Game__Update(this);
@@ -1600,7 +1802,6 @@ struct Megacity
 		{
 			char* name = *(char**)((DWORD)region + 188);
 			vector3d* pos = (vector3d*)((DWORD)region + 220);
-			char* hero = GetCurrentHero();
 			vector3d* heroPos = GetLocalPlayerEntity()->GetPosition();
 			if (strncmp(name, "DBG", 3) == 0)
 			{
@@ -1648,11 +1849,7 @@ struct player_interface
 
 	signed int UpdateComboMeter_Hook(float combo_hits, signed int a3)
 	{
-		if (bInfiniteCombo)
-		{
-			*(float*)((DWORD*)this + 219) = 1000.0f;
-		}
-
+		s_ComboMeter = this;
 		return original_player_interface__UpdateComboMeter(this, combo_hits, a3);
 	}
 };
