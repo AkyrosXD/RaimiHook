@@ -8,15 +8,15 @@
 #include "xinput1_1.h"
 
 #define SM3_FIXED_DELTA_TIME 0.033333335f
-#define SM3_PLAYER_MAX_HEALTH 2000
 #define SM3_SPAWN_PONTS_COUNT 13
-#define SM3_SIZE_OF_REGION 304
 #define SM3_REGIONS_COUNT 560
 #define SM3_CAMERA_DEFAULT_FOV 67
 #define SM3_CAMERA_MIN_FOV 1
 #define SM3_CAMERA_MAX_FOV 180
 
-#define RAIMIHOOK_VER_STR "RaimiHook Version: 8"
+#define RAIMIHOOK_VER_STR "RaimiHook Version: 9"
+
+typedef size_t sm3_spawn_point_index_t;
 
 #define CREATE_FN(RETURN_TYPE, CALLING_CONV, RVA, ARGS) \
 typedef RETURN_TYPE(CALLING_CONV* sub_##RVA##_t)ARGS; \
@@ -730,25 +730,64 @@ static float vector3d_Distance(vector3d* a, vector3d* b)
 	return sqrtf((x * x) + (y * y) + (z * z));
 }
 
+#pragma pack(push, 1)
+struct region_t
+{
+	byte pad_0[148];
+	DWORD load_state; // offset = 148
+	byte pad_1[36];
+	const char* name; // offset = 188
+	byte pad_2[16];
+	vector3d pos1; // offset = 208
+	vector3d pos2; // offset = 220
+	byte pad_3[72];
+};
+#pragma pack(pop)
+
 class entity
 {
 private:
 	int* GetHealthPtr()
 	{
+		void* x = *(void**)((DWORD)this + 28);
+
+		if (x == nullptr)
+			return nullptr;
+
 		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
-		int* v13 = (int*)sub_0x4145D0(*(void**)((DWORD)this + 28), 0);
+		int* v13 = (int*)sub_0x4145D0(x, 0);
+		
+		if (v13 == nullptr)
+			return nullptr;
+
 		return v13 + 68;
 	}
 
 	int* GetMaxHealthPtr()
 	{
-		return this->GetHealthPtr() + 2;
+		void* x = *(void**)((DWORD)this + 28);
+		
+		if (x == nullptr)
+			return nullptr;
+
+		CREATE_FN(int, __thiscall, 0x4145D0, (void*, char));
+		int* v13 = (int*)sub_0x4145D0(x, 0);
+
+		if (v13 == nullptr)
+			return nullptr;
+
+		return v13 + 70;
 	}
 
 public:
 	int GetHealth()
 	{
-		return *this->GetHealthPtr();
+		int* p = this->GetHealthPtr();
+		
+		if (p == nullptr)
+			return 0;
+		
+		return *p;
 	}
 
 	void SetHealth(int hp)
@@ -786,18 +825,26 @@ public:
 	}
 };
 
+struct entity_data 
+{
+	entity* GetEntity()
+	{
+		return (entity*)(((DWORD*)this)[48]);
+	}
+};
+
 struct entity_node
 {
 	entity_node* next;
 	entity_node* previous;
 	void* unk;
-	DWORD* data_ptr;
-
-	entity* GetEntity()
-	{
-		return (entity*)this->data_ptr[48];
-	}
+	entity_data* data;
 };
+
+static region_t* GetRegions()
+{
+	return **(region_t***)0x00F23780;
+}
 
 static entity* GetLocalPlayerEntity()
 {
@@ -1003,19 +1050,19 @@ typedef struct MissionScript
 {
 	const char* instance;
 	E_MISSION_SCRIPT_TYPE script_type;
-	union ScriptData
+	union ScriptPositionData
 	{
-		size_t spawn_point_index;
+		sm3_spawn_point_index_t spawn_point_index;
 		const char* region_name;
 		vector3d absolute_position;
-		ScriptData() { memset(this, 0, sizeof(ScriptData)); }
-		ScriptData(size_t value) { this->spawn_point_index = value; }
-		ScriptData(const char* value) { this->region_name = value; }
-		ScriptData(vector3d value) { this->absolute_position = value; }
-	} script_data;
+		ScriptPositionData() { memset(this, 0, sizeof(ScriptPositionData)); }
+		ScriptPositionData(sm3_spawn_point_index_t value) { this->spawn_point_index = value; }
+		ScriptPositionData(const char* value) { this->region_name = value; }
+		ScriptPositionData(vector3d value) { this->absolute_position = value; }
+	} script_position_data;
 	union
 	{
-		DWORD region;
+		region_t* region;
 	} cache;
 } MissionScript;
 
@@ -1033,26 +1080,26 @@ static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{ "STORY_INSTANCE_MAD_BOMBER_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MAD_BOMBER_2", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MAD_BOMBER_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MAD_BOMBER_4", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)1 }, // we must be near the place where that mission starts
-	{ "STORY_INSTANCE_MAD_BOMBER_5", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)1 }, // we must be near daily bugle
+	{ "STORY_INSTANCE_MAD_BOMBER_4", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (sm3_spawn_point_index_t)1 }, // we must be near the place where that mission starts
+	{ "STORY_INSTANCE_MAD_BOMBER_5", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (sm3_spawn_point_index_t)1 }, // we must be near daily bugle
 	{ "STORY_INSTANCE_LIZARD_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_LIZARD_2", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_LIZARD_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_ATOMIC_PUNK_01", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "GANG_INSTANCE_ATOMIC_PUNK_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H02"}, // the mission is buggy without the script
 	{ "GANG_INSTANCE_ATOMIC_PUNK_05", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "GANG_INSTANCE_ATOMIC_PUNK_07", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "GANG_INSTANCE_GOTHIC_LOLITA_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "N08I01" }, // we must be inside that clothing store
 	{ "GANG_INSTANCE_GOTHIC_LOLITA_02", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "M07I01" }, // we must be near the toy factory
-	{ "GANG_INSTANCE_GOTHIC_LOLITA_04", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)0 }, // we must be at the area where the mission starts
+	{ "GANG_INSTANCE_GOTHIC_LOLITA_04", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (sm3_spawn_point_index_t)0 }, // we must be at the area where the mission starts
 	{ "GANG_INSTANCE_GOTHIC_LOLITA_05", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_PAN_ASIAN_01", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (size_t)4 }, // we must be at the area where the mission starts
+	{ "GANG_INSTANCE_PAN_ASIAN_01", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (sm3_spawn_point_index_t)4 }, // we must be at the area where the mission starts
 	{ "GANG_INSTANCE_PAN_ASIAN_05", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "GANG_INSTANCE_PAN_ASIAN_06", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "GANG_INSTANCE_PAN_ASIAN_07", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_DEWOLFE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_DEWOLFE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_DEWOLFE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_SCORPION_2", E_MISSION_SCRIPT_TYPE::E_POSITION, vector3d({ 3551.81f, 142.991f, 552.708f })}, // we must be at the area where the mission starts
+	{ "STORY_INSTANCE_SCORPION_2", E_MISSION_SCRIPT_TYPE::E_POSITION, vector3d({ 3287.11f, 116.0f, 531.651f })}, // we must be at the area where the mission starts
 	{ "STORY_INSTANCE_SCORPION_3", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_SCORPION_5", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_KINGPIN_1", E_MISSION_SCRIPT_TYPE::E_NONE },
@@ -1061,7 +1108,7 @@ static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{ "LOCATION_INSTANCE_CONNORS_4", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MOVIE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MOVIE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE }
 };
 
 static const char* s_Cutscenes[] =
@@ -1120,41 +1167,34 @@ static void TogglePause()
 	sub_0x7F6E10(*(void**)0xDE7A1C, 4);
 }
 
-DWORD GetRegionByName(const char* s)
+region_t* GetRegionByName(const char* s)
 {
-	DWORD regionsPtr = *(DWORD*)0x00F23780;
-	if (regionsPtr != 0)
+	region_t* regions = GetRegions();
+	if (regions != nullptr)
 	{
-		DWORD regionStart = *(DWORD*)regionsPtr;
-		if (regionStart != 0)
+		for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
 		{
-			for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
+			region_t* currentRegion = regions + i;
+			if (strcmp(currentRegion->name, s) == 0)
 			{
-				DWORD region = (regionStart + (i * SM3_SIZE_OF_REGION));
-				char* name = *(char**)(region + 188);
-				if (strcmp(name, s) == 0)
-				{
-					return region;
-				}
+				return currentRegion;
 			}
 		}
 	}
-	return 0;
+	return nullptr;
 }
 
 static void UnlockAllUndergroundInteriors()
 {
-	DWORD regionsPtr = *(DWORD*)0x00F23780;
-	if (regionsPtr != 0)
+	region_t* regions = GetRegions();
+	if (regions != nullptr)
 	{
-		DWORD regionStart = *(DWORD*)regionsPtr;
 		for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
 		{
-			DWORD region = (regionStart + (i * SM3_SIZE_OF_REGION));
-			vector3d* pos = (vector3d*)(region + 208);
-			if (pos->y < 0.0f)
+			region_t* currentRegion = regions + i;
+			if (currentRegion->pos1.y < 0.0f)
 			{
-				*(DWORD*)((DWORD)region + 148) &= 0xFFFFFFFE;
+				currentRegion->load_state &= 0xFFFFFFFE;
 			}
 		}
 	}
@@ -1289,7 +1329,6 @@ static void SetCameraFovDefault()
 }
 
 static void* s_CurrentTimer;
-static void* s_ComboMeter;
 
 static void EndCurrentTimer()
 {
@@ -1361,34 +1400,38 @@ struct MenuRegionInfo
 	NGLMenu::NGLMenuItem* region_item_parent;
 };
 
-static std::map<DWORD, MenuRegionInfo> s_MenuRegions;
+static std::map<region_t*, MenuRegionInfo> s_MenuRegions;
 
-static void LoadInterior(DWORD ptr)
+static void LoadInterior(region_t* target)
 {
-	vector3d pos1 = *(vector3d*)(ptr + 220);
-	vector3d pos2 = *(vector3d*)(ptr + 208);
-	pos2.y = pos1.y;
-	if (pos2.y < 0.0f)
+	const float MAX_Y = 1024.0f;
+	vector3d pos = { max(target->pos1.x, target->pos2.x), target->pos1.y, max(target->pos1.z, target->pos2.z) };
+	if (pos.y < 0.0f)
 	{
+		pos.y = max(target->pos1.y, target->pos2.y);
 		UnlockAllUndergroundInteriors();
 	}
 	else
 	{
-		NGLMenu::ItemList list = s_MenuRegions[ptr].region_item_parent->subitems;
+		if (pos.y > MAX_Y)
+		{
+			pos.y = target->pos2.y;
+		}
+		NGLMenu::ItemList list = s_MenuRegions[target].region_item_parent->subitems;
 		for (size_t i = 0; i < list.items.size(); i++)
 		{
-			DWORD region = (DWORD)list.items[i]->callback_arg;
-			*(DWORD*)((DWORD)region + 148) &= 0xFFFFFFFE;
+			region_t* currentRegion = (region_t*)list.items[i]->callback_arg;
+			currentRegion->load_state &= 0xFFFFFFFE;
 		}
 	}
-	TeleportHero(&pos2);
+	TeleportHero(&pos);
 }
 
 static void KillAllEntities()
 {
 	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
-		entity* currentEntity = node->GetEntity();
+		entity* currentEntity = node->data->GetEntity();
 		if (currentEntity != GetLocalPlayerEntity())
 		{
 			int hp = currentEntity->GetHealth();
@@ -1405,7 +1448,7 @@ static void TeleportAllEntitiesToMe()
 	entity* localPlayer = GetLocalPlayerEntity();
 	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
-		entity* currentEntity = node->GetEntity();
+		entity* currentEntity = node->data->GetEntity();
 		if (currentEntity != localPlayer)
 		{
 			int hp = currentEntity->GetHealth();
@@ -1424,7 +1467,7 @@ static void TeleportToNearestEntity()
 	entity* localPlayer = GetLocalPlayerEntity();
 	for (entity_node* node = GetEntityList(); (node != nullptr); node = node->next)
 	{
-		entity* currentEntity = node->GetEntity();
+		entity* currentEntity = node->data->GetEntity();
 		if (currentEntity != localPlayer)
 		{
 			int hp = currentEntity->GetHealth();
@@ -1478,13 +1521,13 @@ static void LoadMissionScript(MissionScript* mission)
 	switch (mission->script_type)
 	{
 	case E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT:
-		SpawnToPoint(mission->script_data.spawn_point_index);
+		SpawnToPoint(mission->script_position_data.spawn_point_index);
 		break;
 	
 	case E_MISSION_SCRIPT_TYPE::E_LOAD_REGION:
 		if (mission->cache.region == 0)
 		{
-			mission->cache.region = GetRegionByName(mission->script_data.region_name);
+			mission->cache.region = GetRegionByName(mission->script_position_data.region_name);
 		}
 		if (mission->cache.region == 0) // if not found
 		{
@@ -1494,7 +1537,7 @@ static void LoadMissionScript(MissionScript* mission)
 		break;
 
 	case E_MISSION_SCRIPT_TYPE::E_POSITION:
-		TeleportHero(&mission->script_data.absolute_position);
+		TeleportHero(&mission->script_position_data.absolute_position);
 		break;
 
 	default:
@@ -1542,48 +1585,71 @@ static bool NGLMenuOnShow()
 
 	if (s_WarpButton != nullptr && s_WarpButton->subitems.items.size() == 0)
 	{
+		region_t* regions = GetRegions();
 		for (size_t i = 0; i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
 		{
 			MenuRegionStrip* rs = s_RegionStrips + i;
 			NGLMenu::NGLMenuItem* stripItem = s_WarpButton->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, rs->full_name, nullptr);
 			rs->name_length = strlen(rs->name);
 
-			DWORD regionsPtr = *(DWORD*)0x00F23780;
-			if (regionsPtr != 0)
+			if (regions != nullptr)
 			{
-				DWORD regionStart = *(DWORD*)regionsPtr;
-				if (regionStart != 0)
+				for (size_t j = 0; j < SM3_REGIONS_COUNT; j++)
 				{
-					for (size_t j = 0; j < SM3_REGIONS_COUNT; j++)
+					region_t* currentRegion = regions + j;
+					if (strncmp(rs->name, currentRegion->name, rs->name_length) == 0)
 					{
-						DWORD region = (regionStart + (j * SM3_SIZE_OF_REGION));
-						char* name = *(char**)(region + 188);
-						if (strncmp(rs->name, name, rs->name_length) == 0)
+						if (s_MenuRegions.find(currentRegion) == s_MenuRegions.end())
 						{
-							if (s_MenuRegions.find(region) == s_MenuRegions.end())
+							NGLMenu::NGLMenuItem* regionItem = stripItem->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, currentRegion->name, &LoadInterior, currentRegion);
+							MenuRegionInfo mri{ regionItem, stripItem };
+							s_MenuRegions.insert(std::pair<region_t*, MenuRegionInfo>(currentRegion, mri));
+						}
+						else
+						{
+							MenuRegionInfo* mri = &s_MenuRegions[currentRegion];
+							std::vector<NGLMenu::NGLMenuItem*>* items = &mri->region_item_parent->subitems.items;
+							std::vector<NGLMenu::NGLMenuItem*>::iterator found = std::find(items->begin(), items->end(), mri->region_item);
+							if (found != items->end())
 							{
-								NGLMenu::NGLMenuItem* regionItem = stripItem->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, name, &LoadInterior, (void*)region);
-								MenuRegionInfo mri{regionItem, stripItem };
-								s_MenuRegions.insert(std::pair<DWORD, MenuRegionInfo>(region, mri));
+								items->erase(found);
 							}
-							else
-							{
-								MenuRegionInfo* mri = &s_MenuRegions[region];
-								std::vector<NGLMenu::NGLMenuItem*>* items = &mri->region_item_parent->subitems.items;
-								std::vector<NGLMenu::NGLMenuItem*>::iterator found = std::find(items->begin(), items->end(), mri->region_item);
-								if (found != items->end())
-								{
-									items->erase(found);
-								}
 
-								NGLMenu::NGLMenuItem* regionItem = stripItem->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, name, &LoadInterior, (void*)region);
-								mri->region_item = regionItem;
-								mri->region_item_parent = stripItem;
-							}
+							NGLMenu::NGLMenuItem* regionItem = stripItem->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, currentRegion->name, &LoadInterior, currentRegion);
+							mri->region_item = regionItem;
+							mri->region_item_parent = stripItem;
 						}
 					}
 				}
 			}
+
+			std::sort(stripItem->subitems.items.begin(), stripItem->subitems.items.end(), [](const NGLMenu::NGLMenuItem* lhs, const NGLMenu::NGLMenuItem* rhs) 
+			{
+					const char* lhsText = lhs->text;
+					const char* rhsText = rhs->text;
+					size_t sz = min(strlen(lhsText), strlen(rhsText));
+					bool diff = false;
+					for (size_t i = 0; i < sz; i++)
+					{
+						if (lhsText[i] < rhsText[i])
+						{
+							if (!diff)
+							{
+								return true;
+							}
+							diff = true;
+						}
+						else if (rhsText[i] < lhsText[i])
+						{
+							if (!diff)
+							{
+								return false;
+							}
+							diff = true;
+						}
+					}
+					return false;
+			});
 		}
 	}
 	return true;
@@ -1742,10 +1808,6 @@ struct Sm3Game
 				DisableTraffic();
 			}
 			*(bool*)0xE89AFD = bInstantKill;
-			if (bInfiniteCombo && s_ComboMeter != nullptr)
-			{
-				*(float*)((DWORD*)s_ComboMeter + 219) = 1000.0f;
-			}
 		}
 		SetCameraFov(s_CameraFOV);
 		original_Sm3Game__Update(this);
@@ -1840,17 +1902,21 @@ struct blacksuit_player_interface
 	}
 };
 
-typedef signed int(__thiscall* player_interface__UpdateComboMeter_t)(void*, float, signed int);
+typedef signed int(__thiscall* player_interface__UpdateComboMeter_t)(void*);
 player_interface__UpdateComboMeter_t original_player_interface__UpdateComboMeter;
 
 struct player_interface
 {
-	static const uintptr_t UPDATE_COMBO_METER_ADDRESS = 0x55B5E0;
+	static const uintptr_t UPDATE_COMBO_METER_ADDRESS = 0x565DF0;
 
-	signed int UpdateComboMeter_Hook(float combo_hits, signed int a3)
+	signed int UpdateComboMeter_Hook()
 	{
-		s_ComboMeter = this;
-		return original_player_interface__UpdateComboMeter(this, combo_hits, a3);
+		if (bInfiniteCombo)
+		{
+			*(float*)((DWORD*)this + 219) = 1000.0f;
+		}
+
+		return original_player_interface__UpdateComboMeter(this);
 	}
 };
 
