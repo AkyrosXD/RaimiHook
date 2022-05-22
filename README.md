@@ -10,7 +10,7 @@
 This mod works only with a specific version of the game. It works with a pirated version of the game because the original build is obfuscated. I do not encourage piracy but you can find the build online.
 
 # Installation
-You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_9).
+You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_10).
 Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 
 # How to use
@@ -32,7 +32,7 @@ Once you downloaded it, copy `d3d9.dll` to the directory of the game,
 Этот мод работает только на конкретный версии игры. Он работает только на крякнутую аглийскую версию потому что оригинальный буилд зашифрован. Я не поощряю пиратство, но вы можете найти этот буилд в интернет.
 
 # Установка
-Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_9).
+Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_10).
 Когда вы его скачайте, копируйте `d3d9.dll` в папке игрой,
 
 # Как использовать

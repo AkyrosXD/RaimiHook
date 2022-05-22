@@ -14,7 +14,7 @@
 #define SM3_CAMERA_MIN_FOV 1
 #define SM3_CAMERA_MAX_FOV 180
 
-#define RAIMIHOOK_VER_STR "RaimiHook Version: 9"
+#define RAIMIHOOK_VER_STR "\x01[DB7D09FF]RaimiHook Version: 10"
 
 typedef size_t sm3_spawn_point_index_t;
 
@@ -30,7 +30,8 @@ enum class E_NGLMENU_ITEM_TYPE
 	E_BUTTON,
 	E_BOOLEAN,
 	E_MENU,
-	E_SELECT
+	E_SELECT,
+	E_TEXT
 };
 
 class NGLMenu
@@ -44,6 +45,7 @@ class NGLMenu
 #define SM3_NGL_WINDOW_ITEM_BOTTOM_PADDING 5.0f
 #define SM3_NGL_WINDOW_UP_ARROW " ^ ^ ^"
 #define SM3_NGL_WINDOW_DOWN_ARROW " v v v"
+#define SM3_NGL_WINDOW_ADD_ITEM_PARAMS E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr
 public:
 	struct NGLMenuItem;
 private:
@@ -61,7 +63,7 @@ public:
 		const char* name = "";
 		float scroll_y = 0.0f;
 
-		NGLMenuItem* MenuAddItem(NGLMenu* main, E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+		NGLMenuItem* MenuAddItem(NGLMenu* main, SM3_NGL_WINDOW_ADD_ITEM_PARAMS)
 		{
 			NGLMenuItem* item = new NGLMenuItem;
 			item->type = type;
@@ -96,7 +98,7 @@ public:
 		};
 		struct ItemList subitems;
 
-		NGLMenuItem* AddSubItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+		NGLMenuItem* AddSubItem(SM3_NGL_WINDOW_ADD_ITEM_PARAMS)
 		{
 			return  this->subitems.MenuAddItem(this->main, type, text, valuePtr, callbackArg);
 		}
@@ -272,7 +274,6 @@ private:
 
 	bool CanScrollUp()
 	{
-		NGLMenuItem* selectedItem = this->m_current_items->items[this->m_current_items->selected_item_index];
 		NGLMenuItem* lastItem = this->m_current_items->items[this->m_current_items->items.size() - 1];
 		return this->m_current_items->selected_item_index != 0 && lastItem->pos_y > this->GetMaxItemY();
 	}
@@ -318,9 +319,14 @@ public:
 		memset(this->m_xinput_buttons_down, 0, sizeof(this->m_xinput_buttons_down));
 	}
 
-	NGLMenuItem* AddItem(E_NGLMENU_ITEM_TYPE type, const char* text, void* valuePtr, void* callbackArg = nullptr)
+	NGLMenuItem* AddItem(SM3_NGL_WINDOW_ADD_ITEM_PARAMS)
 	{
 		return this->m_items.MenuAddItem(this, type, text, valuePtr, callbackArg);
+	}
+
+	NGLMenuItem* GetSelectedItem()
+	{
+		return this->m_current_items->items[this->m_current_items->selected_item_index];
 	}
 
 	DWORD GetXInputStatus()
@@ -431,6 +437,10 @@ public:
 				}
 				break;
 
+				case E_NGLMENU_ITEM_TYPE::E_TEXT:
+					strcpy(itemDisplayText, item->text);
+					break;
+
 				default:
 					break;
 				}
@@ -485,7 +495,7 @@ public:
 		}
 	}
 
-	void DrawWatermark(const char* text)
+	void DrawTopText(const char* text)
 	{
 		nglDrawText(text, RGBA_TO_INT(255, 255, 255, 255), 10.0f, 10.0f, 1.0f, 1.0f);
 	}
@@ -549,7 +559,7 @@ public:
 		if (!this->IsOpen)
 			return;
 
-		NGLMenuItem* selectedItem = this->m_current_items->items[this->m_current_items->selected_item_index];
+		NGLMenuItem* selectedItem = this->GetSelectedItem();
 
 		bool up = this->KeyInputScroll(VK_W) || this->KeyInputScroll(VK_UP) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_UP);
 		bool down = this->KeyInputScroll(VK_S) || this->KeyInputScroll(VK_DOWN) || this->XInputGetButtonScroll(XINPUT_GAMEPAD_DPAD_DOWN);
@@ -559,26 +569,32 @@ public:
 		bool execute = this->GetKeyDown(VK_SPACE) || this->XInputGetButtonDown(XINPUT_GAMEPAD_A);
 		if (up)
 		{
-			if (this->m_current_items->selected_item_index == 0)
+			do
 			{
-				size_t lastItemIndex = this->m_current_items->items.size() - 1;
-				this->m_current_items->selected_item_index = lastItemIndex;
-			}
-			else
-			{
-				this->m_current_items->selected_item_index--;
-			}
+				if (this->m_current_items->selected_item_index == 0)
+				{
+					size_t lastItemIndex = this->m_current_items->items.size() - 1;
+					this->m_current_items->selected_item_index = lastItemIndex;
+				}
+				else
+				{
+					this->m_current_items->selected_item_index--;
+				}
+			} while (GetSelectedItem()->type == E_NGLMENU_ITEM_TYPE::E_TEXT);
 		}
 		if (down)
 		{
-			if (this->m_current_items->selected_item_index == this->m_current_items->items.size() - 1)
+			do
 			{
-				this->m_current_items->selected_item_index = 0;
-			}
-			else
-			{
-				this->m_current_items->selected_item_index++;
-			}
+				if (this->m_current_items->selected_item_index == this->m_current_items->items.size() - 1)
+				{
+					this->m_current_items->selected_item_index = 0;
+				}
+				else
+				{
+					this->m_current_items->selected_item_index++;
+				}
+			} while (GetSelectedItem()->type == E_NGLMENU_ITEM_TYPE::E_TEXT);
 		}
 
 		if (back)
@@ -716,6 +732,7 @@ static NGLMenu::NGLMenuItem* s_WarpButton;
 static NGLMenu::NGLMenuItem* s_CameraModeSelect;
 static NGLMenu::NGLMenuItem* s_FovSlider;
 static NGLMenu::NGLMenuItem* s_XInputStatusLabel;
+static NGLMenu::NGLMenuItem* s_MovementSpeedSelect;
 
 struct vector3d
 {
@@ -846,9 +863,14 @@ static region_t* GetRegions()
 	return **(region_t***)0x00F23780;
 }
 
+DWORD GatGameInstance()
+{
+	return *(DWORD*)0x10CFEF0;
+}
+
 static entity* GetLocalPlayerEntity()
 {
-	return (entity*)*(void**)(*(DWORD*)0x10CFEF0 + 532);
+	return (entity*)*(void**)(GatGameInstance() + 532);
 }
 
 static entity_node* GetEntityList()
@@ -858,7 +880,7 @@ static entity_node* GetEntityList()
 
 static bool IsInGame()
 {
-	return (GetLocalPlayerEntity() != nullptr);
+	return (GatGameInstance() != 0) && (GetLocalPlayerEntity() != nullptr);
 }
 
 static float* GetWorldValue(const char* gv)
@@ -979,25 +1001,6 @@ static vector3d* GetNearestSpawnPoint()
 	return point;
 }
 
-static vector3d* GetFurthestSpawnPoint()
-{
-	float maxDist = -1.0f;
-	vector3d* point = nullptr;
-	vector3d* spawnPoints = GetSpawnPoints();
-	entity* localPlayer = GetLocalPlayerEntity();
-	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
-	{
-		vector3d* currentPoint = spawnPoints + i;
-		float dist = vector3d_Distance(localPlayer->GetPosition(), currentPoint);
-		if (dist > maxDist)
-		{
-			point = currentPoint;
-			maxDist = dist;
-		}
-	}
-	return point;
-}
-
 static void SpawnToPoint(size_t idx)
 {
 	vector3d* spawnPoints = GetSpawnPoints();
@@ -1030,6 +1033,8 @@ static void FullHealth()
 {
 	entity* player = GetLocalPlayerEntity();
 	player->SetHealth(player->GetMaxHealth());
+	CREATE_FN(void, __stdcall, 0x41DD90, (int, int));
+	sub_0x41DD90(0, 0);
 }
 
 static void KillHero()
@@ -1048,7 +1053,7 @@ enum class E_MISSION_SCRIPT_TYPE
 
 typedef struct MissionScript
 {
-	const char* instance;
+	const char* instance_name;
 	E_MISSION_SCRIPT_TYPE script_type;
 	union ScriptPositionData
 	{
@@ -1149,6 +1154,17 @@ static const char* s_WorldTimes[] =
 static int s_GlassHouseLevels[] =
 {
 	-1, 0, 1
+};
+
+static float s_MovementSpeeds[] =
+{
+	0,
+	25,
+	50,
+	75,
+	100,
+	150,
+	200
 };
 
 static bool IsGamePaused()
@@ -1269,14 +1285,6 @@ static void TogglePedestrians(bool value)
 	}
 }
 
-static void DisableTraffic()
-{
-	// slf__force_clear_traffic__t
-
-	CREATE_FN(void, __cdecl, 0x61CEF0, (char));
-	sub_0x61CEF0(0);
-}
-
 static void UnlockAllUpgrades()
 {
 	// slf__exptrk_notify_completed_*
@@ -1328,6 +1336,13 @@ static void SetCameraFovDefault()
 	}
 }
 
+static float s_MovementSpeed = 0;
+
+static void Set_s_MovementSpeed(float value)
+{
+	s_MovementSpeed = value;
+}
+
 static void* s_CurrentTimer;
 
 static void EndCurrentTimer()
@@ -1341,57 +1356,56 @@ static void EndCurrentTimer()
 struct MenuRegionStrip
 {
 	const char* name = "";
-	const char* full_name = "";
 	size_t name_length = 0;
 };
 
 static MenuRegionStrip s_RegionStrips[] =
 {
-	{"A", "MEGACITY_STRIP_A"},
-	{"B", "MEGACITY_STRIP_B"},
-	{"C", "MEGACITY_STRIP_C"},
-	{"D", "MEGACITY_STRIP_D"},
-	{"DBG", "MEGACITY_STRIP_DBG"},
-	{"E", "MEGACITY_STRIP_E"},
-	{"F", "MEGACITY_STRIP_F"},
-	{"G", "MEGACITY_STRIP_G"},
-	{"H", "MEGACITY_STRIP_H"},
-	{"HA", "MEGACITY_STRIP_HA"},
-	{"J", "MEGACITY_STRIP_J"},
-	{"K", "MEGACITY_STRIP_K"},
-	{"L", "MEGACITY_STRIP_L"},
-	{"M", "MEGACITY_STRIP_M"},
-	{"MA1", "MEGACITY_STRIP_MA1"},
-	{"MA2", "MEGACITY_STRIP_MA2"},
-	{"MA4", "MEGACITY_STRIP_MA4"},
-	{"MA5", "MEGACITY_STRIP_MA5"},
-	{"MB2", "MEGACITY_STRIP_MB2"},
-	{"MB3", "MEGACITY_STRIP_MB3"},
-	{"MC2", "MEGACITY_STRIP_MC2"},
-	{"MC3", "MEGACITY_STRIP_MC3"},
-	{"MC5", "MEGACITY_STRIP_MC5"},
-	{"MD1", "MEGACITY_STRIP_MD1"},
-	{"MD2", "MEGACITY_STRIP_MD2"},
-	{"ME3", "MEGACITY_STRIP_ME3"},
-	{"ME4", "MEGACITY_STRIP_ME4"},
-	{"MH1", "MEGACITY_STRIP_MH1"},
-	{"N", "MEGACITY_STRIP_N"},
-	{"P", "MEGACITY_STRIP_P"},
-	{"Q", "MEGACITY_STRIP_Q"},
-	{"R", "MEGACITY_STRIP_R"},
-	{"SEW_A", "MEGACITY_STRIP_SEW_A"},
-	{"SEW_B", "MEGACITY_STRIP_SEW_B"},
-	{"SEW_C", "MEGACITY_STRIP_SEW_C"},
-	{"SEW_D", "MEGACITY_STRIP_SEW_D"},
-	{"SEW_E", "MEGACITY_STRIP_SEW_C"},
-	{"SEW_F", "MEGACITY_STRIP_SEW_F"},
-	{"SEW_G", "MEGACITY_STRIP_SEW_G"},
-	{"SUB_A", "MEGACITY_STRIP_SUB_A"},
-	{"SUB_B", "MEGACITY_STRIP_SUB_B"},
-	{"SUB_C", "MEGACITY_STRIP_SUB_C"},
-	{"SUB_D", "MEGACITY_STRIP_SUB_D"},
-	{"SUB_E", "MEGACITY_STRIP_SUB_E"},
-	{"SUB_F", "MEGACITY_STRIP_SUB_F"}
+	{"A"},
+	{"B"},
+	{"C"},
+	{"D"},
+	{"DBG"},
+	{"E"},
+	{"F"},
+	{"G"},
+	{"H"},
+	{"HA"},
+	{"J"},
+	{"K"},
+	{"L"},
+	{"M"},
+	{"MA1"},
+	{"MA2"},
+	{"MA4"},
+	{"MA5"},
+	{"MB2"},
+	{"MB3"},
+	{"MC2"},
+	{"MC3"},
+	{"MC5"},
+	{"MD1"},
+	{"MD2"},
+	{"ME3"},
+	{"ME4"},
+	{"MH1"},
+	{"N"},
+	{"P"},
+	{"Q"},
+	{"R"},
+	{"SEW_A"},
+	{"SEW_B"},
+	{"SEW_C"},
+	{"SEW_D"},
+	{"SEW_E"},
+	{"SEW_F"},
+	{"SEW_G"},
+	{"SUB_A"},
+	{"SUB_B"},
+	{"SUB_C"},
+	{"SUB_D"},
+	{"SUB_E"},
+	{"SUB_F"}
 };
 
 struct MenuRegionInfo
@@ -1494,13 +1508,6 @@ static void LoadStoryInstance(const char* instance)
 	CREATE_FN(void, __fastcall, 0x570340, (void*));
 	sub_0x570340(*(void**)0xDE7D88);
 
-	vector3d* furthestPoint = GetFurthestSpawnPoint();
-	if (furthestPoint != nullptr)
-	{
-		// just to make sure that we get rid of all the entities
-		TeleportHero(furthestPoint);
-	}
-
 	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
 	sub_0x571C60(*(void**)0xDE7D88, instance);
 }
@@ -1510,13 +1517,6 @@ static void LoadMissionScript(MissionScript* mission)
 	// nuke current mission
 	CREATE_FN(void, __fastcall, 0x570340, (void*));
 	sub_0x570340(*(void**)0xDE7D88);
-
-	vector3d* furthestPoint = GetFurthestSpawnPoint();
-	if (furthestPoint != nullptr)
-	{
-		// just to make sure that we get rid of all the entities
-		TeleportHero(furthestPoint);
-	}
 
 	switch (mission->script_type)
 	{
@@ -1545,7 +1545,7 @@ static void LoadMissionScript(MissionScript* mission)
 	}
 
 	CREATE_FN(void*, __thiscall, 0x571C60, (void*, const char*));
-	sub_0x571C60(*(void**)0xDE7D88, mission->instance);
+	sub_0x571C60(*(void**)0xDE7D88, mission->instance_name);
 }
 
 static bool NGLMenuOnHide()
@@ -1589,7 +1589,9 @@ static bool NGLMenuOnShow()
 		for (size_t i = 0; i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
 		{
 			MenuRegionStrip* rs = s_RegionStrips + i;
-			NGLMenu::NGLMenuItem* stripItem = s_WarpButton->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, rs->full_name, nullptr);
+			char* fullName = new char[64];
+			sprintf(fullName, "MEGACITY_STRIP_%s", rs->name);
+			NGLMenu::NGLMenuItem* stripItem = s_WarpButton->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, fullName, nullptr);
 			rs->name_length = strlen(rs->name);
 
 			if (regions != nullptr)
@@ -1669,8 +1671,7 @@ int nglPresent_Hook(void)
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Remove FPS Limit", &bUnlockFPS, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Show Perf Info", &bShowStats, nullptr);
 		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Disable Interface", &bDisableInterface, nullptr);
-		s_XInputStatusLabel = globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "XInput Status: 0", nullptr);
-		globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, RAIMIHOOK_VER_STR, nullptr);
+		s_XInputStatusLabel = globalMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_TEXT, "XInput Status: 0", nullptr);
 
 		NGLMenu::NGLMenuItem* heroMenu = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Hero", nullptr);
 		NGLMenu::NGLMenuItem* changeHeroMenu = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Change Hero", nullptr);
@@ -1693,6 +1694,14 @@ int nglPresent_Hook(void)
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Black Suit Rage", &bBlacksuitRage);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "New Goblin Infinite Boost", &bNewGoblinBoost);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BOOLEAN, "Instant Kill", &bInstantKill);
+		s_MovementSpeedSelect = heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_SELECT, "Spidey Movement Speed", nullptr);
+		for (size_t i = 0; i < sizeof(s_MovementSpeeds) / sizeof(float); i++)
+		{
+			char* speedBuffer = new char[16];
+			float speed = s_MovementSpeeds[i];
+			itoa((int)speed, speedBuffer, 10);
+			s_MovementSpeedSelect->AddSubItem(E_NGLMENU_ITEM_TYPE::E_NONE, speedBuffer, &Set_s_MovementSpeed, *(void**)&speed);
+		}
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Full Health", &FullHealth);
 		heroMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Kill Hero", &KillHero);
@@ -1734,7 +1743,7 @@ int nglPresent_Hook(void)
 		for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(MissionScript); i++)
 		{
 			MissionScript* mission = s_MissionsScripts + i;
-			loadMissionMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, mission->instance, &LoadMissionScript, mission);
+			loadMissionMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, mission->instance_name, &LoadMissionScript, mission);
 		}
 		NGLMenu::NGLMenuItem* cutscenesMenu = missionManagerMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Load Cutscene", nullptr);
 		for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
@@ -1753,18 +1762,25 @@ int nglPresent_Hook(void)
 		entitiesMenu->AddSubItem(E_NGLMENU_ITEM_TYPE::E_BUTTON, "Teleport To Nearest", &TeleportToNearestEntity);
 
 		s_WarpButton = s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_MENU, "Warp", nullptr);
+		s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_TEXT, RAIMIHOOK_VER_STR, nullptr);
+		s_NGLMenu->AddItem(E_NGLMENU_ITEM_TYPE::E_TEXT, "\x01[DB7D09FF]Debug Menu by AkyrosXD", nullptr);
 		s_NGLMenu->OnHide = &NGLMenuOnHide;
 		s_NGLMenu->OnShow = &NGLMenuOnShow;
 	}
-	if (!s_NGLMenu->IsOpen && !bDisableInterface)
+	if (!IsInGame())
 	{
-		s_NGLMenu->DrawWatermark("RaimiHook by AkyrosXD");
+		// the text will be displayed at the beginning, for a short period of time.
+		// this is just an indicator to let the user know that the menu is working and running.
+		s_NGLMenu->DrawTopText("RaimiHook is running");
 	}
-	s_NGLMenu->Draw();
-	s_NGLMenu->HandleUserInput();
-	if (s_NGLMenu->IsOpen)
+	else
 	{
-		sprintf(s_XInputStatusLabel->text, "XInput Status: %s", s_NGLMenu->GetXInputStatusStr());
+		s_NGLMenu->Draw();
+		s_NGLMenu->HandleUserInput();
+		if (s_NGLMenu->IsOpen)
+		{
+			sprintf(s_XInputStatusLabel->text, "XInput Status: %s", s_NGLMenu->GetXInputStatusStr());
+		}
 	}
 	return original_nglPresent();
 }
@@ -1803,10 +1819,7 @@ struct Sm3Game
 				*(bool*)0xE84610 = false;
 			}
 			TogglePedestrians(!bDisablePedestrians);
-			if (bDisableTraffic)
-			{
-				DisableTraffic();
-			}
+			*(bool*)0xD0ED30 = !bDisableTraffic;
 			*(bool*)0xE89AFD = bInstantKill;
 		}
 		SetCameraFov(s_CameraFOV);
@@ -1840,7 +1853,7 @@ struct IGOFrontEnd
 
 	int Draw_Hook()
 	{
-		if (bDisableInterface)
+		if (bDisableInterface && !IsGamePaused())
 			return 0;
 
 		return original_IGOFrontEnd__Draw(this);
@@ -1920,6 +1933,19 @@ struct player_interface
 	}
 };
 
+typedef int(__fastcall* plr_loco_state_t)(void*, float);
+plr_loco_state_t original_plr_loco_state;
+
+const uintptr_t PLR_LOCO_STATE_ADDRESS = 0x68A510;
+
+int __fastcall plr_loco_state_hook(void* a1, float a3)
+{
+	int result = original_plr_loco_state(a1, a3);
+	float* p = (float*)a1;
+	p[17] = s_MovementSpeed;
+	return result;
+}
+
 void StartThread(HANDLE mainThread)
 {
 	DetourTransactionBegin();
@@ -1950,6 +1976,9 @@ void StartThread(HANDLE mainThread)
 	original_player_interface__UpdateComboMeter = (player_interface__UpdateComboMeter_t)player_interface::UPDATE_COMBO_METER_ADDRESS;
 	auto ptrUpdateComboMeter = &player_interface::UpdateComboMeter_Hook;
 	DetourAttach(&(PVOID&)original_player_interface__UpdateComboMeter, *(void**)&ptrUpdateComboMeter);
+
+	original_plr_loco_state = (plr_loco_state_t)PLR_LOCO_STATE_ADDRESS;
+	DetourAttach(&(PVOID&)original_plr_loco_state, &plr_loco_state_hook);
 
 	DetourTransactionCommit();
 }
