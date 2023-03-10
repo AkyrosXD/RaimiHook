@@ -150,6 +150,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,10 +163,59 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="game\app.cpp" />
+    <ClCompile Include="game\blacksuit_player_interface.cpp" />
+    <ClCompile Include="game\camera.cpp" />
+    <ClCompile Include="game\dev_opts.cpp" />
+    <ClCompile Include="game\entity.cpp" />
+    <ClCompile Include="game\experience_tracker.cpp" />
+    <ClCompile Include="game\FEManager.cpp" />
+    <ClCompile Include="game\game.cpp" />
+    <ClCompile Include="game\world.cpp" />
+    <ClCompile Include="game\world_dynamics_system.cpp" />
+    <ClCompile Include="game\goblin_player_interface.cpp" />
+    <ClCompile Include="game\IGOFrontEnd.cpp" />
+    <ClCompile Include="game\IGOTimerWidget.cpp" />
+    <ClCompile Include="game\input_mgr.cpp" />
+    <ClCompile Include="game\mission_manager.cpp" />
+    <ClCompile Include="game\ngl.cpp" />
+    <ClCompile Include="game\debug_menu.cpp" />
+    <ClCompile Include="game\player_interface.cpp" />
+    <ClCompile Include="game\slf.cpp" />
+    <ClCompile Include="game\string_hash.cpp" />
+    <ClCompile Include="game\xenon_input_mgr.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="d3d9_proxy.h" />
-    <ClInclude Include="xinput1_1.h" />
+    <ClInclude Include="d3d9_proxy.hpp" />
+    <ClInclude Include="game\app.hpp" />
+    <ClInclude Include="game\blacksuit_player_interface.hpp" />
+    <ClInclude Include="game\camera.hpp" />
+    <ClInclude Include="game\dev_opts.hpp" />
+    <ClInclude Include="game\entity.hpp" />
+    <ClInclude Include="game\experience_tracker.hpp" />
+    <ClInclude Include="game\FEManager.hpp" />
+    <ClInclude Include="game\game.hpp" />
+    <ClInclude Include="game\world.hpp" />
+    <ClInclude Include="game\world_dynamics_system.hpp" />
+    <ClInclude Include="game\game_vars.hpp" />
+    <ClInclude Include="game\glass_house_manager.hpp" />
+    <ClInclude Include="game\goblin_player_interface.hpp" />
+    <ClInclude Include="game\IGOFrontEnd.hpp" />
+    <ClInclude Include="game\IGOTimerWidget.hpp" />
+    <ClInclude Include="game\input_mgr.hpp" />
+    <ClInclude Include="game\mission_manager.hpp" />
+    <ClInclude Include="game\ngl.hpp" />
+    <ClInclude Include="game\debug_menu.hpp" />
+    <ClInclude Include="game\numerics.hpp" />
+    <ClInclude Include="game\player_interface.hpp" />
+    <ClInclude Include="game\plr_loco_standing_state.hpp" />
+    <ClInclude Include="game\region.hpp" />
+    <ClInclude Include="game\singleton.hpp" />
+    <ClInclude Include="game\slf.hpp" />
+    <ClInclude Include="game\string_hash.hpp" />
+    <ClInclude Include="game\windows_app.hpp" />
+    <ClInclude Include="game\xenon_input_mgr.hpp" />
+    <ClInclude Include="game\xinput1_1.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />

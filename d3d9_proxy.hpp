@@ -36,8 +36,5 @@ static bool LoadD3d9()
 	wcscat(d3d9_path, L"\\d3d9.dll");
 	hD3d9Original = LoadLibraryW(d3d9_path);
 	
-	if (hD3d9Original == nullptr)
-		return false;
-
-	return true;
+	return (hD3d9Original != nullptr);
 }
