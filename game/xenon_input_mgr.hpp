@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <chrono>
 
+/// <summary>
+/// XInput wrapper class
+/// </summary>
 class xenon_input_mgr
 {
 private:

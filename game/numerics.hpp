@@ -14,8 +14,3 @@ struct vector3d
 		return sqrtf((x * x) + (y * y) + (z * z));
 	}
 };
-
-struct quaternion
-{
-	float x, y, z, w;
-};

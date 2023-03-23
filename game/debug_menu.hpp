@@ -45,6 +45,11 @@ enum class E_NGLMENU_ENTRY_TYPE
 	SELECT,
 
 	/// <summary>
+	/// Selection element of a multiple selection entry
+	/// </summary>
+	SELECT_OPTION,
+
+	/// <summary>
 	/// Text entry or a selection for a multiple selection entry
 	/// </summary>
 	TEXT

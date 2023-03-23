@@ -15,11 +15,19 @@ template <typename T, const unsigned long long ADDR>
 class singleton
 {
 public:
+	/// <summary>
+	/// Checks if the instance exists
+	/// </summary>
+	/// <returns>True if the instance exists. Otherwise false</returns>
 	static bool has_inst()
 	{
 		return *(T**)ADDR != nullptr;
 	}
 
+	/// <summary>
+	/// Gets the current instance
+	/// </summary>
+	/// <returns>The current instance</returns>
 	static T* inst()
 	{
 		return *(T**)ADDR;

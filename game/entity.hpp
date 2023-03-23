@@ -132,6 +132,7 @@ struct entity_node
 	/// Previous node
 	/// </summary>
 	entity_node* previous;
+
 	void* unk;
 
 	/// <summary>

@@ -3,16 +3,54 @@
 #include "singleton.hpp"
 #include "game.hpp"
 
+/// <summary>
+/// Mission Status
+/// </summary>
 enum class E_MISSION_STATUS : DWORD
 {
+	/// <summary>
+	/// First Mission loading
+	/// </summary>
 	FIRST_MISSION = 0,
+
+	/// <summary>
+	/// The game is searching for crime activities
+	/// </summary>
 	CRIME_SEARCHING = 1,
+
+	/// <summary>
+	/// The current mission is starting
+	/// </summary>
 	MISSION_STARTING = 2,
+
+	/// <summary>
+	/// The current mission is in progress
+	/// </summary>
 	MISSION_IN_PROGRESS = 4,
+
+	/// <summary>
+	/// There is a crime in progress
+	/// </summary>
 	CRIME_IN_PROGRESS = 5,
+
+	/// <summary>
+	/// Crime completed / averted 
+	/// </summary>
 	CRIME_COMPLETED = 7,
+
+	/// <summary>
+	/// The mission is in the loading screen of ending or restarting
+	/// </summary>
 	MISSION_RESTARTING_OR_QUITTING = 11,
+
+	/// <summary>
+	/// The current mission has failed
+	/// </summary>
 	MISSION_FAILED_SCREEN = 13,
+
+	/// <summary>
+	/// The current mission is loading and the user is in the loading screen
+	/// </summary>
 	MISSION_LOADING = 17
 };
 

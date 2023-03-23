@@ -11,6 +11,7 @@
 #include "game/camera.hpp"
 #include "game/dev_opts.hpp"
 #include "game/mission_manager.hpp"
+#include "game/experience_tracker.hpp"
 #include "game/slf.hpp"
 #include "game/world.hpp"
 #include "game/world_dynamics_system.hpp"
@@ -201,18 +202,6 @@ inline vector3d* GetSpawnPoints()
 	return game_vars::inst()->get_var_array<vector3d>("g_hero_spawn_points");
 }
 
-void FullHealth()
-{
-	entity_health_data* const hero_health_data = world::inst()->hero_entity->get_health_data();
-	hero_health_data->health = hero_health_data->max_heath;
-}
-
-void KillHero()
-{
-	entity_health_data* const hero_health_data = world::inst()->hero_entity->get_health_data();
-	hero_health_data->health = hero_health_data->min_health;
-}
-
 region* GetRegionByName(const char* s)
 {
 	region* const regions = game::get_regions();
@@ -244,6 +233,29 @@ void UnlockAllUndergroundInteriors()
 			}
 		}
 	}
+}
+
+void FullHealth()
+{
+	entity_health_data* const hero_health_data = world::inst()->hero_entity->get_health_data();
+	hero_health_data->health = hero_health_data->max_heath;
+}
+
+void UnlockAllUpgrades()
+{
+	if (experience_tracker::has_inst())
+	{
+		for (DWORD i = 0; i < 1000; i++)
+		{
+			experience_tracker::inst()->exptrk_notify(i);
+		}
+	}
+}
+
+void KillHero()
+{
+	entity_health_data* const hero_health_data = world::inst()->hero_entity->get_health_data();
+	hero_health_data->health = hero_health_data->min_health;
 }
 
 void FailCurrentMission()
@@ -502,7 +514,7 @@ vector3d* GetNearestSpawnPoint()
 
 void SpawnToNearestSpawnPoint()
 {
-	vector3d* p = GetNearestSpawnPoint();
+	vector3d* const p = GetNearestSpawnPoint();
 	if (p != nullptr)
 	{
 		world::inst()->set_hero_rel_position(*p);
@@ -730,9 +742,9 @@ void CreateHeroEntry()
 		char* speedBuffer = new char[16];
 		float speed = s_MovementSpeeds[i];
 		itoa((int)speed, speedBuffer, 10);
-		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, speedBuffer, nullptr, nullptr);
+		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer, nullptr, nullptr);
 	}
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &slf::exptrk_notify_completed, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Full Health", &FullHealth, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Kill Hero", &KillHero, nullptr);
 }
@@ -744,7 +756,7 @@ void CreateWorldEntry()
 	for (size_t i = 0; i < sizeof(s_WorldTimes) / sizeof(const char*); i++)
 	{
 		const char* worldTime = s_WorldTimes[i];
-		s_GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, worldTime, &SetWorldTime, (void*)(DWORD)i);
+		s_GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, worldTime, &SetWorldTime, (void*)(DWORD)i);
 	}
 	s_GlassHouseLevelSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Glass House Level", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_GlassHouseLevels) / sizeof(int); i++)
@@ -752,7 +764,7 @@ void CreateWorldEntry()
 		const int& level = s_GlassHouseLevels[i];
 		char* levelNumBuffer = new char[2];
 		itoa(level, levelNumBuffer, 10);
-		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, levelNumBuffer, &slf::set_glass_house_level, (void*)level);
+		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer, &slf::set_glass_house_level, (void*)level);
 	}
 	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &bDisableTraffic, nullptr);
 }
@@ -772,7 +784,7 @@ void CreateCameraEntry()
 	{
 		char* fovBuffer = new char[3];
 		itoa(i, fovBuffer, 10);
-		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, fovBuffer, nullptr, nullptr);
+		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer, nullptr, nullptr);
 	}
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
@@ -807,14 +819,14 @@ void CreateTimerEntry()
 	{
 		char* mins_buffer = new char[2];
 		itoa(i, mins_buffer, 10);
-		s_CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, mins_buffer, &SetTimerTime, nullptr);
+		s_CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mins_buffer, &SetTimerTime, nullptr);
 	}
 	s_CurrentTimerSecondsSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Seconds", nullptr, nullptr);
 	for (size_t i = 0; i < 60; i++)
 	{
 		char* secs_buffer = new char[2];
 		itoa(i, secs_buffer, 10);
-		s_CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, secs_buffer, &SetTimerTime, nullptr);
+		s_CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, secs_buffer, &SetTimerTime, nullptr);
 	}
 	s_CurrentTimerRSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "R", nullptr, nullptr);
 	s_CurrentTimerGSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "G", nullptr, nullptr);
@@ -823,9 +835,9 @@ void CreateTimerEntry()
 	{
 		char* color_buffer = new char[4];
 		itoa(i, color_buffer, 10);
-		s_CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, color_buffer, &SetTimerColor, nullptr);
-		s_CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, color_buffer, &SetTimerColor, nullptr);
-		s_CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::NONE, color_buffer, &SetTimerColor, nullptr);
+		s_CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
+		s_CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
+		s_CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
 	}
 }
 
@@ -879,7 +891,7 @@ int nglPresent_Hook(void)
 	{
 		// the text will be displayed at the beginning, for a short period of time.
 		// this is just an indicator to let the user know that the menu is working and running.
-		nglDrawText("RaimiHook is running", 0, 10.0f, 10.0f, 1.0f, 1.0f);
+		nglDrawText("RaimiHook is running", RGBA_TO_INT(255, 255, 255, 255), 10.0f, 10.0f, 1.0f, 1.0f);
 	}
 	else if (s_DebugMenu != nullptr)
 	{
