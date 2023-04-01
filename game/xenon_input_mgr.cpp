@@ -5,7 +5,7 @@ XInputSetState_t xenon_input_mgr::m_XInputSetState;
 DWORD xenon_input_mgr::m_xinput_status;
 XINPUT_STATE xenon_input_mgr::m_xinput_previous_state = {};
 XINPUT_STATE xenon_input_mgr::m_xinput_current_state = {};
-ULONGLONG xenon_input_mgr::m_button_repeats[0x8000] = {};
+ULONGLONG xenon_input_mgr::m_button_repeats[XINPUT_MAX_BUTTONS] = {};
 ULONGLONG xenon_input_mgr::m_left_thumb_up_repeat;
 ULONGLONG xenon_input_mgr::m_left_thumb_down_repeat;
 ULONGLONG xenon_input_mgr::m_left_thumb_right_repeat;

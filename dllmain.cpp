@@ -501,7 +501,7 @@ vector3d* GetNearestSpawnPoint()
 	const entity* localPlayer = world::inst()->hero_entity;
 	for (spawn_point_index_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 	{
-		vector3d* currentPoint = spawnPoints + i;
+		vector3d* const currentPoint = spawnPoints + i;
 		const float dist = vector3d::distance(localPlayer->transform->position, *currentPoint);
 		if (dist < minDist)
 		{
