@@ -5,6 +5,9 @@
 #include "numerics.hpp"
 #include "player_interface.hpp"
 
+#define ENTIY_DATA_ID_HEALTH 0
+#define ENTIY_DATA_ID_INTERFACE 11
+
 #pragma pack(push, 1)
 /// <summary>
 /// Entity health data class
@@ -97,7 +100,7 @@ public:
 	T* get_interface()
 	{
 		static_assert(std::is_base_of<player_interface, T>::value, "'T' is not a valid player_interface type.");
-		return (T*)this->get_data(11);
+		return reinterpret_cast<T*>(this->get_data(ENTIY_DATA_ID_INTERFACE));
 	}
 };
 #pragma pack(pop)

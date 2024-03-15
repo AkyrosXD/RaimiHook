@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 #include <iostream>
+#include <intrin.h>
 
 #include "d3d9_proxy.hpp"
 #include "game/app.hpp"
@@ -43,6 +44,7 @@ static debug_menu_entry* s_CurrentTimerSecondsSelect;
 static debug_menu_entry* s_CurrentTimerRSelect;
 static debug_menu_entry* s_CurrentTimerGSelect;
 static debug_menu_entry* s_CurrentTimerBSelect;
+static debug_menu_entry* s_HeroPositionLabel;
 
 static string_hash s_HeroStringHash;
 
@@ -64,7 +66,8 @@ enum class E_MISSION_SCRIPT_TYPE
 	E_NONE,
 	E_SPAWN_POINT, // teleport player to a spawn point
 	E_LOAD_REGION, // load and teleport player to a region / interrior
-	E_POSITION // teleport player to a specific position
+	E_POSITION, // teleport player to a specific position
+	E_PHOTO // teleport to robbie in daily bugle
 };
 
 typedef struct MissionScript
@@ -120,16 +123,27 @@ static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{ "LOCATION_INSTANCE_DEWOLFE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_DEWOLFE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_DEWOLFE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "MJ_THRILLRIDE_H17_00", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
+	{ "MJ_THRILLRIDE_H17_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
+	{ "MJ_THRILLRIDE_H17_02", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
 	{ "STORY_INSTANCE_SCORPION_2", E_MISSION_SCRIPT_TYPE::E_POSITION, vector3d({ 3287.11f, 116.0f, 531.651f })}, // we must be at the area where the mission starts
 	{ "STORY_INSTANCE_SCORPION_3", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_SCORPION_5", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_KINGPIN_1", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "BROCK_BEATDOWN", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)1 }, // we must be near daily bugle
+	{ "MJ_SCARERIDE_Q05_00", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "Q05" },
 	{ "STORY_INSTANCE_KINGPIN_2", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "MD2I01" }, // we must be inside kingpin's mansion
 	{ "LOCATION_INSTANCE_CONNORS_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "LOCATION_INSTANCE_CONNORS_4", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MOVIE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
 	{ "STORY_INSTANCE_MOVIE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE }
+	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
+	{ "PHOTO_CITY_TOUR", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{ "PHOTO_BEAUTY_CONTEST_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{ "PHOTO_GANG_EXO_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{ "PHOTO_EXOBITION_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{ "PHOTO_STUNTMAN", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{ "PHOTO_UFO", E_MISSION_SCRIPT_TYPE::E_PHOTO },
 };
 
 static const char* const s_Cutscenes[] =
@@ -392,7 +406,7 @@ void LoadInterior(region* target)
 		const debug_menu_entry_list* const list = s_MenuRegions[target].region_entry_parent->sublist;
 		for (size_t i = 0; i < list->size(); i++)
 		{
-			region* currentRegion = (region*)list->entry_at(i)->callback_arg;
+			region* const currentRegion = reinterpret_cast<region*>(list->entry_at(i)->callback_arg);
 			currentRegion->load_state &= 0xFFFFFFFE;
 		}
 	}
@@ -543,6 +557,21 @@ void LoadMissionScript(MissionScript* mission)
 		LoadInterior(mission->cache.region);
 		break;
 
+	case E_MISSION_SCRIPT_TYPE::E_PHOTO:
+		if (mission->cache.region == nullptr)
+		{
+			mission->cache.region = GetRegionByName("DBGI02");
+		}
+		if (mission->cache.region == nullptr) // if not found
+		{
+			return;
+		}
+		LoadInterior(mission->cache.region);
+		vector3d robbie_pos = vector3d({ 1282.294f, 115.510f, 177.337f });
+		world::inst()->set_hero_rel_position(robbie_pos);
+
+		break;
+
 	case E_MISSION_SCRIPT_TYPE::E_POSITION:
 		world::inst()->set_hero_rel_position(mission->script_position_data.absolute_position);
 		break;
@@ -672,6 +701,11 @@ bool NGLMenuOnShow()
 		app::inst()->game_inst->toggle_pause();
 	}
 
+	void** v9 = (void**)(*(DWORD*)0xDE7A1C + 80);
+	void* v12 = *v9;
+	DWORD current_player = (DWORD)((void*)((DWORD)v12 + 84));
+	bool x = *(bool*)(current_player + 8);
+
 	UpdateGameTimeEntry();
 
 	UpdateGlassHouseLevelEntry();
@@ -747,6 +781,7 @@ void CreateHeroEntry()
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Full Health", &FullHealth, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Kill Hero", &KillHero, nullptr);
+	s_HeroPositionLabel = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::TEXT, "Position: (0, 0, 0)", nullptr, nullptr);
 }
 
 void CreateWorldEntry()
@@ -852,6 +887,10 @@ void CreateEntitiesEntry()
 void CreateWarpEntry()
 {
 	s_WarpButton = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Warp", nullptr, nullptr);
+}
+
+void CreateMenuInfo()
+{
 	s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::TEXT, RAIMIHOOK_VER_STR, nullptr, nullptr);
 	s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::TEXT, NGL_TEXT_WITH_COLOR("Debug Menu by AkyrosXD", "DB7D09FF"), nullptr, nullptr);
 }
@@ -877,6 +916,8 @@ void CreateDebugMenu()
 	CreateEntitiesEntry();
 
 	CreateWarpEntry();
+
+	CreateMenuInfo();
 }
 
 
@@ -899,7 +940,16 @@ int nglPresent_Hook(void)
 		s_DebugMenu->handle_input();
 		if (s_DebugMenu->is_open())
 		{
-			sprintf(s_XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status());
+			if (s_XInputStatusLabel != nullptr)
+			{
+				sprintf(s_XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status());
+			}
+
+			if (s_HeroPositionLabel != nullptr)
+			{
+				const vector3d& pos = world::inst()->hero_entity->transform->position;
+				sprintf(s_HeroPositionLabel->text, "Position: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
+			}
 		}
 	}
 	return original_nglPresent();
@@ -916,6 +966,12 @@ struct app_hooks
 	{
 		if (world::has_inst() && world::inst()->hero_entity != nullptr)
 		{
+			//DEFINE_FUNCTION(void*, __stdcall, 0x41D520, (const char*));
+			//DEFINE_FUNCTION(entity*, __cdecl, 0x74E290, (void*, DWORD));
+			//entity* v11 = sub_0x74E290(sub_0x41D520(global_game_entities[(size_t)E_GLOBAL_GAME_ENTITY_INDEX::CAMERA]), 28);
+			//std::cout << v11 << "\n";
+			//vector3d lel = vector3d({ 0, 0, 0 });
+			//v11->set_rel_position(lel);
 			if (s_DebugMenu != nullptr)
 			{
 				s_DebugMenu->execute_current_callback();
@@ -991,21 +1047,32 @@ struct plr_loco_standing_state_hooks
 plr_loco_standing_state_hooks::plr_loco_standing_state__update_t plr_loco_standing_state_hooks::original_plr_loco_standing_state__update;
 
 #ifdef _DEBUG
-#pragma warning (disable: 6031)
 void AllocDebugConsole()
 {
 	AllocConsole();
-	freopen("CONOUT$", "w", stdout);
+	(void)(freopen("CONOUT$", "w", stdout));
 }
-#pragma warning (default: 6031)
 #endif // _DEBUG
+
+/*typedef int (*sub_74E290_t)(char*);
+static sub_74E290_t original_sub_74E290;
+int __cdecl sub_74E290_hook(char* a1)
+{
+	if (world::has_inst() && world::inst()->hero_entity != nullptr)
+	{
+		if (strcmp(a1, "MA01_INTRO") == 0)
+		{
+			std::cout << _ReturnAddress() << "\n";
+		}
+	}
+	return original_sub_74E290(a1);
+}*/
 
 void StartThread(HANDLE mainThread)
 {
 #ifdef _DEBUG
 	AllocDebugConsole();
 #endif // _DEBUG
-
 	DetourTransactionBegin();
 
 	original_nglPresent = (nglPresent_t)NGL_PRESENT_ADDRESS;
@@ -1039,12 +1106,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	case DLL_PROCESS_ATTACH:
 		if (!LoadD3d9())
 		{
-			MessageBoxA(0, "d3d9.dll proxy error", "RaimiHook", 0);
+			MessageBoxA(0, "d3d9.dll proxy error", "RaimiHook", MB_OK);
 			return false;
 		}
 		if (!IsGameCompatible())
 		{
-			MessageBoxA(0, "This version of the game is not compatible. Please try a different one.", "RaimiHook", 0);
+			MessageBoxA(0, "This version of the game is not compatible. Please try a different one.", "RaimiHook", MB_OK);
 			return false;
 		}
 		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartThread, 0, 0, 0);

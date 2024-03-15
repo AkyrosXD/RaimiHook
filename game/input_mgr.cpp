@@ -3,8 +3,8 @@
 
 #define MAX_KEYS 0xFE
 
-ULONGLONG pressed_times[MAX_KEYS] = {};
-bool keys_repeated[MAX_KEYS] = {};
+static ULONGLONG pressed_times[MAX_KEYS] = {};
+static bool keys_repeated[MAX_KEYS] = {};
 
 static bool m_initialized = false;
 

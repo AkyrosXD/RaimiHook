@@ -14,6 +14,7 @@
 #define DEBUG_MENU_ENTRY_BOTTOM_PADDING 5.0f
 #define DEBUG_MENU_TITLE_TOP_PADDING 5.0f
 #define DEBUG_MENU_ENTRY_MAX_CHAR 256
+#define DEBUG_MENU_ENTRY_MAX_DISPLAY_TEXT_LENGTH 128
 #define DEBUG_MENU_UP_ARROW " ^ ^ ^"
 #define DEBUG_MENU_DOWN_ARROW " v v v"
 
@@ -242,6 +243,18 @@ public:
 	bool empty() const;
 };
 
+struct debug_menu_draw_entry_parameters
+{
+	size_t current_entry_index;
+	const debug_menu_entry* last_entry;
+	float y_start;
+	float current_entry_pos_y;
+	float entry_max_pos_y;
+	float menu_max_height;
+	float current_width;
+	char* const current_entry_display_text;
+};
+
 class debug_menu
 {
 private:
@@ -259,7 +272,6 @@ private:
 	int m_down_arrow_height;
 	int m_up_arrow_width;
 	int m_up_arrow_height;
-	ULONGLONG m_last_fast_scroll_time[0x8000];
 	nglBox m_ngl_box_data;
 	debug_menu_entry_list* m_default_entry_list;
 	debug_menu_entry_list* m_current_entry_list;
@@ -277,6 +289,7 @@ private:
 	float get_up_scroll_indicator_pos_y() const;
 	debug_menu_entry* get_selected_entry() const;
 	debug_menu_entry* get_last_entry() const;
+	void draw_entry(debug_menu_draw_entry_parameters& parameters);
 
 public:
 	/// <summary>

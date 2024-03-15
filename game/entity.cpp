@@ -8,7 +8,7 @@ void* entity::get_data(const char& id) const
 
 entity_health_data* entity::get_health_data() const
 {
-	return (entity_health_data*)this->get_data(0);
+	return reinterpret_cast<entity_health_data*>(this->get_data(ENTIY_DATA_ID_HEALTH));
 }
 
 void entity::set_rel_position(vector3d& position)

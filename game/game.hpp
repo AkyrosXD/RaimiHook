@@ -72,3 +72,44 @@ struct game_clock
 /// Static instance of the Front-End Manager
 /// </summary>
 static const FEManager* const g_femanager = (const FEManager*)0xE87950;
+
+/// <summary>
+/// 
+/// </summary>
+static const char** const global_game_entities = (const char**)0xD13938;
+
+/// <summary>
+/// 
+/// </summary>
+enum class E_GLOBAL_GAME_ENTITY_INDEX : size_t
+{
+	ACTOR,
+	CAMERA,
+	BASE,
+	ENTITY,
+	MARKER,
+	MIC,
+	LIGHT_SOURCE,
+	PARTICLE,
+	ITEM,
+	CONGLOMERATE,
+	CONGLOMERATE_CLONE,
+	DYNAMIC_CONGLOMERATE_CLONE,
+	BEAM,
+	SKY,
+	POLYTUBE,
+	NEOLIGHT,
+	GAME_CAMERA,
+	SPIDERMAN_CAMERA,
+	MARKY_CAMERA,
+	ANIMATED_CAMERA,
+	SNIPER_CAMERA,
+	AI_CAMERA,
+	ANCHOR_MARKER,
+	LINE_ANCHOR,
+	SIGN,
+	AI_COVER_MARKER,
+	LIGHTCONTAINER,
+	null,
+	IGNORE_FLAVOR
+};

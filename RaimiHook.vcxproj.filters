@@ -181,6 +181,8 @@
     <None Include="d3d9.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

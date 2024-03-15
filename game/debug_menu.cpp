@@ -1,5 +1,28 @@
 #include "debug_menu.hpp"
 
+debug_menu::debug_menu(const char* title, float x, float y)
+{
+	this->m_is_open = false;
+	this->m_default_entry_list = new debug_menu_entry_list(title);
+	this->m_current_entry_list = this->m_default_entry_list;
+	this->on_show = nullptr;
+	this->on_hide = nullptr;
+	this->m_name = title;
+	this->m_window_pos_x = x;
+	this->m_window_pos_y = y;
+	nglConstructBox(&this->m_ngl_box_data);
+	int default_width, default_height;
+	nglGetTextSize(title, &default_width, &default_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	this->m_default_width = (float)default_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
+	this->m_default_height = (float)default_height + DEBUG_MENU_TITLE_TOP_PADDING + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	nglGetTextSize(DEBUG_MENU_DOWN_ARROW, &this->m_down_arrow_width, &this->m_down_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	nglGetTextSize(DEBUG_MENU_UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	this->m_width = (float)this->m_default_width;
+	this->m_height = (float)this->m_default_height;
+	nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
+	this->m_current_callback = { nullptr, nullptr };
+}
+
 bool debug_menu::get_on_hide()
 {
 	typedef bool(*hide_t)();
@@ -40,7 +63,7 @@ void debug_menu::change_entry_list(debug_menu_entry_list* list)
 {
 	if (this->m_current_entry_list != list)
 	{
-		debug_menu_entry_list* current_list = this->m_current_entry_list;
+		debug_menu_entry_list* const current_list = this->m_current_entry_list;
 		this->m_current_entry_list = list;
 		this->m_current_entry_list->previous = current_list;
 		int w, h;
@@ -104,30 +127,6 @@ debug_menu_entry* debug_menu::add_entry(E_NGLMENU_ENTRY_TYPE type, const char* t
 	return this->m_default_entry_list->add_entry(this, type, text, value_or_callback_ptr, callback_arg);
 }
 
-debug_menu::debug_menu(const char* title, float x, float y)
-{
-	this->m_is_open = false;
-	this->m_default_entry_list = new debug_menu_entry_list(title);
-	this->m_current_entry_list = this->m_default_entry_list;
-	this->on_show = nullptr;
-	this->on_hide = nullptr;
-	this->m_name = title;
-	this->m_window_pos_x = x;
-	this->m_window_pos_y = y;
-	nglConstructBox(&this->m_ngl_box_data);
-	int default_width, default_height;
-	nglGetTextSize(title, &default_width, &default_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	this->m_default_width = (float)default_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
-	this->m_default_height = (float)default_height + DEBUG_MENU_TITLE_TOP_PADDING + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
-	nglGetTextSize(DEBUG_MENU_DOWN_ARROW, &this->m_down_arrow_width, &this->m_down_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	nglGetTextSize(DEBUG_MENU_UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	this->m_width = (float)this->m_default_width;
-	this->m_height = (float)this->m_default_height;
-	nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
-	this->m_current_callback = { nullptr, nullptr };
-	memset(this->m_last_fast_scroll_time, 0, sizeof(m_last_fast_scroll_time));
-}
-
 bool debug_menu::is_open() const
 {
 	return this->m_is_open;
@@ -169,6 +168,101 @@ void debug_menu::reset_current_callback()
 	this->m_current_callback.callback_arg = nullptr;
 }
 
+void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
+{
+	debug_menu_entry* const current_entry = this->m_current_entry_list->entry_at(parameters.current_entry_index);
+	nglColor_t current_text_color = RGBA_TO_INT(255, 255, 255, 255);
+	current_entry->pos_y = parameters.current_entry_pos_y;
+	const bool is_selected = (parameters.current_entry_index == this->m_current_entry_list->selected_entry_index);
+	if (is_selected)
+	{
+		current_text_color = RGBA_TO_INT(0, 255, 21, 255);
+	}
+	switch (current_entry->type)
+	{
+	case E_NGLMENU_ENTRY_TYPE::BOOLEAN:
+	{
+		bool val = *reinterpret_cast<bool*>(current_entry->value_ptr);
+		sprintf(parameters.current_entry_display_text, "%s: %s", current_entry->text, val ? "True" : "False");
+	}
+	break;
+
+	case E_NGLMENU_ENTRY_TYPE::BUTTON:
+	{
+		strncpy(parameters.current_entry_display_text, current_entry->text, DEBUG_MENU_ENTRY_MAX_DISPLAY_TEXT_LENGTH);
+	}
+	break;
+
+	case E_NGLMENU_ENTRY_TYPE::MENU:
+	{
+		sprintf(parameters.current_entry_display_text, "%s: ...", current_entry->text);
+	}
+	break;
+
+	case E_NGLMENU_ENTRY_TYPE::SELECT:
+	{
+		if (!current_entry->sublist->empty())
+		{
+			const debug_menu_entry* selection = current_entry->sublist->get_selected();
+			if (selection->type == E_NGLMENU_ENTRY_TYPE::SELECT_OPTION)
+			{
+				sprintf(parameters.current_entry_display_text, "%s: %s", current_entry->text, selection->text);
+			}
+		}
+		else
+		{
+			sprintf(parameters.current_entry_display_text, "%s:", current_entry->text);
+		}
+	}
+	break;
+
+	case E_NGLMENU_ENTRY_TYPE::TEXT:
+		strncpy(parameters.current_entry_display_text, current_entry->text, DEBUG_MENU_ENTRY_MAX_DISPLAY_TEXT_LENGTH);
+		break;
+
+	default:
+		break;
+	}
+	nglGetTextSize(parameters.current_entry_display_text, &current_entry->text_width, &current_entry->text_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	const bool overflow = current_entry->pos_y > parameters.entry_max_pos_y;
+	if (!overflow)
+	{
+		this->m_height = current_entry->pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	}
+	else
+	{
+		if (current_entry->display_pos_y > parameters.entry_max_pos_y)
+		{
+			this->m_height = this->get_menu_max_height();
+		}
+		else
+		{
+			this->m_height = current_entry->display_pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+		}
+	}
+	if (is_selected)
+	{
+		this->m_current_entry_list->scroll_pos_y = current_entry->pos_y;
+	}
+	if (parameters.last_entry->pos_y > parameters.entry_max_pos_y)
+	{
+		current_entry->display_pos_y = current_entry->pos_y - this->m_current_entry_list->scroll_pos_y + parameters.y_start;
+	}
+	else
+	{
+		current_entry->display_pos_y = current_entry->pos_y;
+	}
+	current_entry->is_visible = current_entry->display_pos_y >= parameters.y_start && current_entry->display_pos_y <= parameters.entry_max_pos_y;
+	if (current_entry->is_visible)
+	{
+		float tmpWidth = (float)current_entry->text_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
+		parameters.current_width = max(parameters.current_width, tmpWidth);
+		nglDrawText(parameters.current_entry_display_text, current_text_color, this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, current_entry->display_pos_y, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	}
+
+	parameters.current_entry_pos_y += (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+}
+
 void debug_menu::draw()
 {
 	if (!this->m_is_open)
@@ -181,13 +275,12 @@ void debug_menu::draw()
 		nglDrawText(this->m_current_entry_list->menu_title, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->m_window_pos_y + DEBUG_MENU_TITLE_TOP_PADDING, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 
 		const float y_start = this->get_min_pos_y_for_entries();
-		const debug_menu_entry* last_entry = this->get_last_entry();
 		const float entry_max_pos_y = this->get_max_pos_y_for_entries();
 		const float menu_max_height = this->get_menu_max_height();
 
 		float current_entry_pos_y = y_start;
 		float current_width = this->m_default_width;
-		char current_entry_display_text[128];
+		char current_entry_display_text[DEBUG_MENU_ENTRY_MAX_DISPLAY_TEXT_LENGTH] = {};
 
 		if (this->can_scoll_up())
 		{
@@ -198,100 +291,24 @@ void debug_menu::draw()
 			current_width = max(current_width, (float)this->m_down_arrow_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING);
 		}
 
+		debug_menu_draw_entry_parameters draw_entry_parameters =
+		{
+			0,
+			this->get_last_entry(),
+			y_start,
+			current_entry_pos_y,
+			this->get_max_pos_y_for_entries(),
+			this->get_menu_max_height(),
+			current_width,
+			current_entry_display_text
+		};
+
 		for (size_t i = 0; i < this->m_current_entry_list->size(); i++)
 		{
-			debug_menu_entry* current_entry = this->m_current_entry_list->entry_at(i);
-			nglColor_t current_text_color = RGBA_TO_INT(255, 255, 255, 255);
-			current_entry->pos_y = current_entry_pos_y;
-			const bool is_selected = (i == this->m_current_entry_list->selected_entry_index);
-			if (is_selected)
-			{
-				current_text_color = RGBA_TO_INT(0, 255, 21, 255);
-			}
-			switch (current_entry->type)
-			{
-			case E_NGLMENU_ENTRY_TYPE::BOOLEAN:
-			{
-				bool val = *(bool*)current_entry->value_ptr;
-				sprintf(current_entry_display_text, "%s: %s", current_entry->text, val ? "True" : "False");
-			}
-			break;
-
-			case E_NGLMENU_ENTRY_TYPE::BUTTON:
-			{
-				strcpy(current_entry_display_text, current_entry->text);
-			}
-			break;
-
-			case E_NGLMENU_ENTRY_TYPE::MENU:
-			{
-				sprintf(current_entry_display_text, "%s: ...", current_entry->text);
-			}
-			break;
-
-			case E_NGLMENU_ENTRY_TYPE::SELECT:
-			{
-				if (!current_entry->sublist->empty())
-				{
-					const debug_menu_entry* selection = current_entry->sublist->get_selected();
-					if (selection->type == E_NGLMENU_ENTRY_TYPE::TEXT)
-					{
-						sprintf(current_entry_display_text, "%s: %s", current_entry->text, selection->text);
-					}
-				}
-				else
-				{
-					sprintf(current_entry_display_text, "%s:", current_entry->text);
-				}
-			}
-			break;
-
-			case E_NGLMENU_ENTRY_TYPE::TEXT:
-				strcpy(current_entry_display_text, current_entry->text);
-				break;
-
-			default:
-				break;
-			}
-			nglGetTextSize(current_entry_display_text, &current_entry->text_width, &current_entry->text_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-			bool overflow = current_entry->pos_y > entry_max_pos_y;
-			if (!overflow)
-			{
-				this->m_height = current_entry->pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
-			}
-			else
-			{
-				if (current_entry->display_pos_y > entry_max_pos_y)
-				{
-					this->m_height = this->get_menu_max_height();
-				}
-				else
-				{
-					this->m_height = current_entry->display_pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
-				}
-			}
-			if (is_selected)
-			{
-				this->m_current_entry_list->scroll_pos_y = current_entry->pos_y;
-			}
-			if (last_entry->pos_y > entry_max_pos_y)
-			{
-				current_entry->display_pos_y = current_entry->pos_y - this->m_current_entry_list->scroll_pos_y + y_start;
-			}
-			else
-			{
-				current_entry->display_pos_y = current_entry->pos_y;
-			}
-			current_entry->is_visible = current_entry->display_pos_y >= y_start && current_entry->display_pos_y <= entry_max_pos_y;
-			if (current_entry->is_visible)
-			{
-				float tmpWidth = (float)current_entry->text_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
-				current_width = max(current_width, tmpWidth);
-				nglDrawText(current_entry_display_text, current_text_color, this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, current_entry->display_pos_y, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-			}
-
-			current_entry_pos_y += (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+			draw_entry_parameters.current_entry_index = i;
+			this->draw_entry(draw_entry_parameters);
 		}
+		 
 		if (this->can_scoll_down())
 		{
 			nglDrawText(DEBUG_MENU_DOWN_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_down_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
@@ -300,7 +317,7 @@ void debug_menu::draw()
 		{
 			nglDrawText(DEBUG_MENU_UP_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_up_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 		}
-		this->m_width = current_width;
+		this->m_width = draw_entry_parameters.current_width;
 	}
 }
 
@@ -417,7 +434,7 @@ void debug_menu::handle_input()
 		{
 			if (selected_entry->value_ptr != nullptr)
 			{
-				bool* val = (bool*)selected_entry->value_ptr;
+				bool* val = reinterpret_cast<bool*>(selected_entry->value_ptr);
 				*val = !*val;
 			}
 		}
@@ -457,7 +474,7 @@ void debug_menu::handle_input()
 		{
 			if (selected_entry->value_ptr != nullptr)
 			{
-				bool* val = (bool*)selected_entry->value_ptr;
+				bool* val = reinterpret_cast<bool*>(selected_entry->value_ptr);
 				*val = !*val;
 			}
 		}
@@ -499,7 +516,7 @@ void debug_menu::handle_input()
 		{
 			if (selected_entry->value_ptr != nullptr)
 			{
-				bool* val = (bool*)selected_entry->value_ptr;
+				bool* val = reinterpret_cast<bool*>(selected_entry->value_ptr);
 				*val = !*val;
 			}
 		}
