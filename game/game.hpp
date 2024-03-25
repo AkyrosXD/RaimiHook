@@ -11,6 +11,7 @@
 #define SM3_SPAWN_PONTS_COUNT 13
 
 typedef size_t spawn_point_index_t;
+typedef float mission_checkpoint_t;
 
 #pragma pack(push, 1)
 /// <summary>

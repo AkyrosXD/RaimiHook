@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <iostream>
 #include <intrin.h>
+#include <future>
+#include <memory>
 
 #include "d3d9_proxy.hpp"
 #include "game/app.hpp"
@@ -72,22 +74,57 @@ enum class E_MISSION_SCRIPT_TYPE
 
 typedef struct MissionScript
 {
-	const char* instance_name;
-	E_MISSION_SCRIPT_TYPE script_type;
+	const char* instance_name = "";
+	E_MISSION_SCRIPT_TYPE script_type = E_MISSION_SCRIPT_TYPE::E_NONE;
 	union ScriptPositionData
 	{
 		spawn_point_index_t spawn_point_index;
 		const char* region_name;
-		vector3d absolute_position;
-		ScriptPositionData() { memset(this, 0, sizeof(ScriptPositionData)); }
-		ScriptPositionData(spawn_point_index_t value) { this->spawn_point_index = value; }
-		ScriptPositionData(const char* value) { this->region_name = value; }
-		ScriptPositionData(vector3d value) { this->absolute_position = value; }
+		vector3d absolute_position = { };
 	} script_position_data;
+	mission_checkpoint_t mission_checkpoint_start = 0;
+	mission_checkpoint_t mission_checkpoint_end = 0;
 	union
 	{
-		region* region;
+		region* region = nullptr;
 	} cache;
+
+	MissionScript(const char* const& instance_name)
+	{
+		this->instance_name = instance_name;
+	}
+
+	MissionScript type(const E_MISSION_SCRIPT_TYPE& script_type)
+	{
+		this->script_type = script_type;
+		return *this;
+	}
+
+	MissionScript spawn_point_index(const spawn_point_index_t& spawn_point_index)
+	{
+		this->script_position_data.spawn_point_index = spawn_point_index;
+		return *this;
+	}
+
+	MissionScript spawm_region(const char* const& region_name)
+	{
+		this->script_position_data.region_name = region_name;
+		return *this;
+	}
+
+	MissionScript spawn_position(const vector3d& absolute_position)
+	{
+		this->script_position_data.absolute_position = absolute_position;
+		return *this;
+	}
+
+	MissionScript checkpoints(const mission_checkpoint_t& start, const mission_checkpoint_t& end)
+	{
+		this->mission_checkpoint_start = start;
+		this->mission_checkpoint_end = end;
+		return *this;
+	}
+
 } MissionScript;
 
 static const char* s_Heroes[] =
@@ -100,50 +137,209 @@ static const char* s_Heroes[] =
 
 static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 {
-	{ "SWINGING_TUTORIAL_GO", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MAD_BOMBER_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MAD_BOMBER_2", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MAD_BOMBER_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MAD_BOMBER_4", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)1 }, // we must be near the place where that mission starts
-	{ "STORY_INSTANCE_MAD_BOMBER_5", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)1 }, // we must be near daily bugle
-	{ "STORY_INSTANCE_LIZARD_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_LIZARD_2", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_LIZARD_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_ATOMIC_PUNK_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H02"}, // the mission is buggy without the script
-	{ "GANG_INSTANCE_ATOMIC_PUNK_05", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_ATOMIC_PUNK_07", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_GOTHIC_LOLITA_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "N08I01" }, // we must be inside that clothing store
-	{ "GANG_INSTANCE_GOTHIC_LOLITA_02", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "M07I01" }, // we must be near the toy factory
-	{ "GANG_INSTANCE_GOTHIC_LOLITA_04", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)0 }, // we must be at the area where the mission starts
-	{ "GANG_INSTANCE_GOTHIC_LOLITA_05", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_PAN_ASIAN_01", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)4 }, // we must be at the area where the mission starts
-	{ "GANG_INSTANCE_PAN_ASIAN_05", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_PAN_ASIAN_06", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "GANG_INSTANCE_PAN_ASIAN_07", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "LOCATION_INSTANCE_DEWOLFE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "LOCATION_INSTANCE_DEWOLFE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "LOCATION_INSTANCE_DEWOLFE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "MJ_THRILLRIDE_H17_00", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
-	{ "MJ_THRILLRIDE_H17_01", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
-	{ "MJ_THRILLRIDE_H17_02", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "H17" }, // we must be at regin H17
-	{ "STORY_INSTANCE_SCORPION_2", E_MISSION_SCRIPT_TYPE::E_POSITION, vector3d({ 3287.11f, 116.0f, 531.651f })}, // we must be at the area where the mission starts
-	{ "STORY_INSTANCE_SCORPION_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_SCORPION_5", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_KINGPIN_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "BROCK_BEATDOWN", E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT, (spawn_point_index_t)1 }, // we must be near daily bugle
-	{ "MJ_SCARERIDE_Q05_00", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "Q05" },
-	{ "STORY_INSTANCE_KINGPIN_2", E_MISSION_SCRIPT_TYPE::E_LOAD_REGION, "MD2I01" }, // we must be inside kingpin's mansion
-	{ "LOCATION_INSTANCE_CONNORS_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "LOCATION_INSTANCE_CONNORS_4", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MOVIE_1", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MOVIE_3", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "STORY_INSTANCE_MOVIE_4", E_MISSION_SCRIPT_TYPE::E_NONE },
-	{ "PHOTO_CITY_TOUR", E_MISSION_SCRIPT_TYPE::E_PHOTO },
-	{ "PHOTO_BEAUTY_CONTEST_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
-	{ "PHOTO_GANG_EXO_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
-	{ "PHOTO_EXOBITION_1", E_MISSION_SCRIPT_TYPE::E_PHOTO },
-	{ "PHOTO_STUNTMAN", E_MISSION_SCRIPT_TYPE::E_PHOTO },
-	{ "PHOTO_UFO", E_MISSION_SCRIPT_TYPE::E_PHOTO },
+	{
+		MissionScript("SWINGING_TUTORIAL_GO")
+	},
+	{
+		MissionScript("STORY_INSTANCE_MAD_BOMBER_1")
+			.checkpoints(0, 5)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MAD_BOMBER_2")
+			.checkpoints(1, 6)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MAD_BOMBER_3")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(2)
+			.checkpoints(1, 7)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MAD_BOMBER_4")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("MA4I01")
+			.checkpoints(1, 5)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MAD_BOMBER_5")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(1)
+			.checkpoints(0, 3)
+	},
+	{
+		MissionScript("STORY_INSTANCE_LIZARD_1")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(1)
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("STORY_INSTANCE_LIZARD_2")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("MB2I03")
+			.checkpoints(0, 2)
+	},
+	{
+		MissionScript("STORY_INSTANCE_LIZARD_3")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("MB3I02")
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_01")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("H02")
+	},
+	{
+		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_05")
+			.checkpoints(1, 4)
+	},
+	{
+		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_07")
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_01")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("N08I01")
+			.checkpoints(0, 2)
+	},
+	{
+		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_02")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("M07I01")
+	},
+	{
+		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_04")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(0)
+	},
+	{
+		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_05")
+			.checkpoints(0, 1)
+	},
+	{
+		MissionScript("GANG_INSTANCE_PAN_ASIAN_01")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(4)
+			.checkpoints(0, 2)
+	},
+	{
+		MissionScript("GANG_INSTANCE_PAN_ASIAN_05")
+			.checkpoints(1, 4)
+	},
+	{
+		MissionScript("GANG_INSTANCE_PAN_ASIAN_06")
+			.checkpoints(1, 5)
+	},
+	{
+		MissionScript("GANG_INSTANCE_PAN_ASIAN_07")
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("LOCATION_INSTANCE_DEWOLFE_1")
+			.checkpoints(1, 3)
+	},
+	{
+		MissionScript("LOCATION_INSTANCE_DEWOLFE_3")
+	},
+	{
+		MissionScript("LOCATION_INSTANCE_DEWOLFE_4")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("J02")
+			.checkpoints(0, 2)
+	},
+	{
+		MissionScript("MJ_THRILLRIDE_H17_00")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("H17")
+	},
+	{
+		MissionScript("MJ_THRILLRIDE_H17_01")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("H17")
+	},
+	{
+		MissionScript("MJ_THRILLRIDE_H17_02")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("H17")
+	},
+	{
+		MissionScript("STORY_INSTANCE_SCORPION_2")
+			.type(E_MISSION_SCRIPT_TYPE::E_POSITION)
+			.spawn_position(vector3d({ 3287.11f, 116.0f, 531.651f }))
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("STORY_INSTANCE_SCORPION_3")
+			.checkpoints(0, 5)
+	},
+	{
+		MissionScript("STORY_INSTANCE_SCORPION_5")
+			.checkpoints(0, 3)
+	},
+	{
+		MissionScript("STORY_INSTANCE_KINGPIN_1")
+	},
+	{
+		MissionScript("STORY_INSTANCE_KINGPIN_2")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("MD2I01")
+			.checkpoints(0, 4)
+	},
+	{ 
+		MissionScript("BROCK_BEATDOWN")
+			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+			.spawn_point_index(1)
+	},
+	{
+		MissionScript("MJ_SCARERIDE_Q05_00")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("Q05")
+	},
+	{ 
+		MissionScript("LOCATION_INSTANCE_CONNORS_1")
+	},
+	{ 
+		MissionScript("LOCATION_INSTANCE_CONNORS_4")
+	},
+	{
+		MissionScript("STORY_INSTANCE_MOVIE_1")
+			.checkpoints(1, 3)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MOVIE_3")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("ME3I01")
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("STORY_INSTANCE_MOVIE_4")
+			.checkpoints(0, 4)
+	},
+	{
+		MissionScript("PHOTO_CITY_TOUR")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
+	{ 
+		MissionScript("PHOTO_BEAUTY_CONTEST_1")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
+	{ 
+		MissionScript("PHOTO_GANG_EXO_1")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
+	{
+		MissionScript("PHOTO_EXOBITION_1")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
+	{ 
+		MissionScript("PHOTO_STUNTMAN")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
+	{
+		MissionScript("PHOTO_UFO")
+			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+	},
 };
 
 static const char* const s_Cutscenes[] =
@@ -580,7 +776,30 @@ void LoadMissionScript(MissionScript* mission)
 		break;
 	}
 
-	mission_manager::inst()->load_story_instance(mission->instance_name);
+	std::make_unique<std::thread>([mission]() {
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+
+		mission_manager::inst()->status = E_MISSION_STATUS::CRIME_COMPLETED;
+
+		mission_manager::inst()->load_story_instance(mission->instance_name);
+
+		if (mission->mission_checkpoint_start > static_cast<mission_checkpoint_t>(0))
+		{
+			const ULONGLONG MAX_TICKS = 10000;
+			const ULONGLONG startTicks = GetTickCount64();
+
+			mission_checkpoint_t* const checkpointPtr = game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint");
+
+			while (mission_manager::inst()->status != E_MISSION_STATUS::MISSION_IN_PROGRESS)
+			{
+				if ((GetTickCount64() - startTicks) > MAX_TICKS)
+					break;
+
+				*checkpointPtr = mission->mission_checkpoint_start;
+			}
+		}
+	})->detach();
 }
 
 void UpdateGameTimeEntry()
@@ -607,8 +826,8 @@ void UpdateTimerEntry()
 		&& s_CurrentTimerSecondsSelect != nullptr && !s_CurrentTimerSecondsSelect->sublist->empty())
 	{
 		IGOTimerWidget* const timer = g_femanager->IGO->TimerWidget;
-		s_CurrentTimerMinutesSelect->sublist->selected_entry_index = (size_t)truncf(timer->Seconds / 60.0f);
-		s_CurrentTimerSecondsSelect->sublist->selected_entry_index = (size_t)timer->Seconds;
+		s_CurrentTimerMinutesSelect->sublist->selected_entry_index = static_cast<size_t>(truncf(timer->Seconds / 60.0f));
+		s_CurrentTimerSecondsSelect->sublist->selected_entry_index = static_cast<size_t>(timer->Seconds);
 	}
 }
 
@@ -834,7 +1053,27 @@ void CreateMissionManagerEntry()
 	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(MissionScript); i++)
 	{
 		MissionScript* mission = s_MissionsScripts + i;
-		loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, mission->instance_name, &LoadMissionScript, mission);
+		if (mission->mission_checkpoint_end > static_cast<mission_checkpoint_t>(0))
+		{
+			debug_menu_entry* const selectedMissionMenu = loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, mission->instance_name, nullptr, nullptr);
+			for (mission_checkpoint_t i = mission->mission_checkpoint_start; i <= mission->mission_checkpoint_end; i++)
+			{
+				char* checkpoint_name = new char[strlen(mission->instance_name) + 3];
+				sprintf(checkpoint_name, "%s_%02d", mission->instance_name, static_cast<int>(i));
+
+				MissionScript* const checkpointScript = new MissionScript(mission->instance_name);
+				checkpointScript->script_type = mission->script_type;
+				checkpointScript->script_position_data = mission->script_position_data;
+				checkpointScript->cache = mission->cache;
+				checkpointScript->mission_checkpoint_start = i;
+
+				selectedMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, checkpoint_name, &LoadMissionScript, checkpointScript);
+			}
+		}
+		else
+		{
+			loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, mission->instance_name, &LoadMissionScript, mission);
+		}
 	}
 	debug_menu_entry* cutscenesMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Cutscene", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
@@ -966,12 +1205,6 @@ struct app_hooks
 	{
 		if (world::has_inst() && world::inst()->hero_entity != nullptr)
 		{
-			//DEFINE_FUNCTION(void*, __stdcall, 0x41D520, (const char*));
-			//DEFINE_FUNCTION(entity*, __cdecl, 0x74E290, (void*, DWORD));
-			//entity* v11 = sub_0x74E290(sub_0x41D520(global_game_entities[(size_t)E_GLOBAL_GAME_ENTITY_INDEX::CAMERA]), 28);
-			//std::cout << v11 << "\n";
-			//vector3d lel = vector3d({ 0, 0, 0 });
-			//v11->set_rel_position(lel);
 			if (s_DebugMenu != nullptr)
 			{
 				s_DebugMenu->execute_current_callback();
@@ -1028,6 +1261,7 @@ struct mission_manager_hooks : mission_manager
 		return false;
 	}
 };
+
 mission_manager_hooks::mission_manager__on_district_unloaded_t mission_manager_hooks::original_mission_manager__on_district_unloaded;
 
 struct plr_loco_standing_state_hooks
@@ -1044,6 +1278,7 @@ struct plr_loco_standing_state_hooks
 		return result;
 	}
 };
+
 plr_loco_standing_state_hooks::plr_loco_standing_state__update_t plr_loco_standing_state_hooks::original_plr_loco_standing_state__update;
 
 #ifdef _DEBUG
@@ -1054,19 +1289,29 @@ void AllocDebugConsole()
 }
 #endif // _DEBUG
 
-/*typedef int (*sub_74E290_t)(char*);
-static sub_74E290_t original_sub_74E290;
-int __cdecl sub_74E290_hook(char* a1)
+typedef int (*sub_7A4430_t)(void*, const char*, int);
+static sub_7A4430_t original_sub_7A4430;
+int __cdecl sub_7A4430_hook(void* a1, const char* a2, int a3)
 {
 	if (world::has_inst() && world::inst()->hero_entity != nullptr)
 	{
-		if (strcmp(a1, "MA01_INTRO") == 0)
+		if (a2 != nullptr)
 		{
-			std::cout << _ReturnAddress() << "\n";
+			//std::cout << a2 << "\n";
+			if (strcmp(a2, "ma01_intro") == 0)
+			{
+				std::cout << a3 << "\n";
+				//a2 = "ma02_hostage";
+				a2 = "mc01_intro";
+			}
+			//if (strcmp(a2, "MA01_INTRO") == 0)
+			//{
+			//	std::cout << _ReturnAddress() << "\n";
+			//}
 		}
 	}
-	return original_sub_74E290(a1);
-}*/
+	return original_sub_7A4430(a1, a2, a3);
+}
 
 void StartThread(HANDLE mainThread)
 {
@@ -1077,6 +1322,10 @@ void StartThread(HANDLE mainThread)
 
 	original_nglPresent = (nglPresent_t)NGL_PRESENT_ADDRESS;
 	DetourAttach(&(PVOID&)original_nglPresent, nglPresent_Hook);
+
+	//keep an eye on 7A4430
+	original_sub_7A4430 = (sub_7A4430_t)0x7A4430;
+	//DetourAttach(&(PVOID&)original_sub_7A4430, sub_7A4430_hook);
 
 	app_hooks::original_app__on_update = (app_hooks::app__on_update_t)(app_hooks::ON_UPDATE_ADDRESS);
 	DetourAttach(&(PVOID&)app_hooks::original_app__on_update, app_hooks::on_update);
