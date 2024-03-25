@@ -826,8 +826,8 @@ void UpdateTimerEntry()
 		&& s_CurrentTimerSecondsSelect != nullptr && !s_CurrentTimerSecondsSelect->sublist->empty())
 	{
 		IGOTimerWidget* const timer = g_femanager->IGO->TimerWidget;
-		s_CurrentTimerMinutesSelect->sublist->selected_entry_index = static_cast<size_t>(truncf(timer->Seconds / 60.0f));
-		s_CurrentTimerSecondsSelect->sublist->selected_entry_index = static_cast<size_t>(timer->Seconds);
+		s_CurrentTimerMinutesSelect->sublist->selected_entry_index = static_cast<size_t>(truncf(timer->Seconds)) / 60;
+		s_CurrentTimerSecondsSelect->sublist->selected_entry_index = static_cast<size_t>(timer->Seconds) % 60;
 	}
 }
 
