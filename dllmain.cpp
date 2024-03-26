@@ -736,7 +736,11 @@ void SpawnToNearestSpawnPoint()
 
 void LoadMissionScript(MissionScript* mission)
 {
+	if (!mission_manager::has_inst())
+		return;
+
 	mission_manager::inst()->unload_current_mission();
+
 
 	switch (mission->script_type)
 	{
@@ -751,7 +755,7 @@ void LoadMissionScript(MissionScript* mission)
 		}
 		if (mission->cache.region == nullptr) // if not found
 		{
-			return;
+			break;
 		}
 		LoadInterior(mission->cache.region);
 		break;
@@ -763,7 +767,7 @@ void LoadMissionScript(MissionScript* mission)
 		}
 		if (mission->cache.region == nullptr) // if not found
 		{
-			return;
+			break;
 		}
 		LoadInterior(mission->cache.region);
 		vector3d robbie_pos = vector3d({ 1282.294f, 115.510f, 177.337f });
@@ -783,7 +787,11 @@ void LoadMissionScript(MissionScript* mission)
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
-		mission_manager::inst()->status = E_MISSION_STATUS::CRIME_COMPLETED;
+		while (mission_manager::inst()->status != E_MISSION_STATUS::CRIME_SEARCHING)
+		{
+			mission_manager::inst()->unload_current_mission();
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		}
 
 		mission_manager::inst()->load_story_instance(mission->instance_name);
 
