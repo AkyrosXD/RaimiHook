@@ -1,6 +1,7 @@
 #pragma once
 
 #include "xinput1_1.hpp"
+#include "input_mgr.hpp"
 #include <stdexcept>
 #include <chrono>
 
@@ -30,6 +31,7 @@ private:
 
 	static FARPROC get_xinput_function(LPCSTR lpProcName);
 	static void vibrate_internal(const WORD& right_motor_strenght, const WORD& left_motor_strenght);
+	static bool ret_and_update_input_type(const bool& value);
 public:
 	/// <summary>
 	/// Initializes the input manager

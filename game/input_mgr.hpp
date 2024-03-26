@@ -3,6 +3,22 @@
 #include <Windows.h>
 
 /// <summary>
+/// Input type
+/// </summary>
+enum class E_INPUT_MANAGER_TYPE
+{
+	/// <summary>
+	/// Input type: Mouse & keyboard
+	/// </summary>
+	E_MOUSEKYBOARD,
+
+	/// <summary>
+	/// Input type: Xbox & other XInput controllers
+	/// </summary>
+	E_XINPUT
+};
+
+/// <summary>
 /// input_mgr class
 /// </summary>
 class input_mgr
@@ -33,4 +49,16 @@ public:
 	/// <param name="vKey">The target key</param>
 	/// <returns>True if the key is pressed for one frame or the key is held down longer than the repeat delay</returns>
 	static bool is_key_pressed_repeated(const int& vKey);
+
+	/// <summary>
+	/// Sets the current input type
+	/// </summary>
+	/// <param name="value">The input type</param>
+	static void set_current_input_type(const E_INPUT_MANAGER_TYPE& value);
+
+	/// <summary>
+	/// Gets the current input type
+	/// </summary>
+	/// <returns>The current input type</returns>
+	static E_INPUT_MANAGER_TYPE get_current_input_type();
 };

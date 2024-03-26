@@ -3,6 +3,7 @@
 
 #define MAX_KEYS 0xFE
 
+static E_INPUT_MANAGER_TYPE m_input_type = E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD;
 static ULONGLONG pressed_times[MAX_KEYS] = {};
 static bool keys_repeated[MAX_KEYS] = {};
 
@@ -22,10 +23,12 @@ LRESULT CALLBACK WndProc(
 		switch (uMsg)
 		{
 		case WM_KEYDOWN:
+			input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD);
 			keys_repeated[vKey] = repeat;
 			break;
 
 		case WM_KEYUP:
+			input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD);
 			keys_repeated[vKey] = false;
 			break;
 		}
@@ -62,4 +65,14 @@ bool input_mgr::is_key_pressed_once(const int& vKey)
 bool input_mgr::is_key_pressed_repeated(const int& vKey)
 {
 	return keys_repeated[vKey];
+}
+
+void input_mgr::set_current_input_type(const E_INPUT_MANAGER_TYPE& value)
+{
+	m_input_type = value;
+}
+
+E_INPUT_MANAGER_TYPE input_mgr::get_current_input_type()
+{
+	return m_input_type;
 }

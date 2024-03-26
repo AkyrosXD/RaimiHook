@@ -279,6 +279,9 @@ static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		MissionScript("STORY_INSTANCE_KINGPIN_1")
+			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("MD1I01")
+			.checkpoints(0, 1)
 	},
 	{
 		MissionScript("STORY_INSTANCE_KINGPIN_2")
@@ -627,7 +630,7 @@ void KillAllEntities()
 		}
 	}
 
-	if (entities_killed > 0)
+	if (entities_killed > 0 && input_mgr::get_current_input_type() == E_INPUT_MANAGER_TYPE::E_XINPUT)
 	{
 		const WORD vibration_strength = (WORD)(entities_killed * 2500);
 		xenon_input_mgr::gamepad_vibrate(vibration_strength, vibration_strength, std::chrono::seconds(1));

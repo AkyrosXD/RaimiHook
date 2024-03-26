@@ -323,6 +323,11 @@ void debug_menu::draw()
 
 void debug_menu::handle_input()
 {
+	if (windows_app::has_inst() && GetForegroundWindow() != windows_app::inst()->render_window)
+	{
+		return;
+	}
+
 	// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 
 	const int VK_A = 0x41;

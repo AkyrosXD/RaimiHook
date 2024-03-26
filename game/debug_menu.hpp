@@ -3,6 +3,7 @@
 #include "ngl.hpp"
 #include "input_mgr.hpp"
 #include "xenon_input_mgr.hpp"
+#include "windows_app.hpp"
 #include <vector>
 
 #pragma warning (disable: 4996)  /* _CRT_SECURE_NO_WARNINGS */
