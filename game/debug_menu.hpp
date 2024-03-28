@@ -273,7 +273,7 @@ private:
 	int m_down_arrow_height;
 	int m_up_arrow_width;
 	int m_up_arrow_height;
-	nglBox m_ngl_box_data;
+	nglWindow m_ngl_box_data;
 	debug_menu_entry_list* m_default_entry_list;
 	debug_menu_entry_list* m_current_entry_list;
 	debug_menu_entry_callback m_current_callback;
@@ -291,6 +291,8 @@ private:
 	debug_menu_entry* get_selected_entry() const;
 	debug_menu_entry* get_last_entry() const;
 	void draw_entry(debug_menu_draw_entry_parameters& parameters);
+	void adjust_height();
+	void draw_scroll_indicators();
 
 public:
 	/// <summary>

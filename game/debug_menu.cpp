@@ -10,7 +10,7 @@ debug_menu::debug_menu(const char* title, float x, float y)
 	this->m_name = title;
 	this->m_window_pos_x = x;
 	this->m_window_pos_y = y;
-	nglConstructBox(&this->m_ngl_box_data);
+	nglConstructWindow(&this->m_ngl_box_data);
 	int default_width, default_height;
 	nglGetTextSize(title, &default_width, &default_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 	this->m_default_width = (float)default_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
@@ -19,7 +19,7 @@ debug_menu::debug_menu(const char* title, float x, float y)
 	nglGetTextSize(DEBUG_MENU_UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 	this->m_width = (float)this->m_default_width;
 	this->m_height = (float)this->m_default_height;
-	nglSetBoxColor(&this->m_ngl_box_data, 0xC0000000);
+	nglSetWindowColor(&this->m_ngl_box_data, 0xC0000000);
 	this->m_current_callback = { nullptr, nullptr };
 }
 
@@ -224,26 +224,12 @@ void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
 		break;
 	}
 	nglGetTextSize(parameters.current_entry_display_text, &current_entry->text_width, &current_entry->text_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	const bool overflow = current_entry->pos_y > parameters.entry_max_pos_y;
-	if (!overflow)
-	{
-		this->m_height = current_entry->pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
-	}
-	else
-	{
-		if (current_entry->display_pos_y > parameters.entry_max_pos_y)
-		{
-			this->m_height = this->get_menu_max_height();
-		}
-		else
-		{
-			this->m_height = current_entry->display_pos_y + (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
-		}
-	}
+
 	if (is_selected)
 	{
 		this->m_current_entry_list->scroll_pos_y = current_entry->pos_y;
 	}
+
 	if (parameters.last_entry->pos_y > parameters.entry_max_pos_y)
 	{
 		current_entry->display_pos_y = current_entry->pos_y - this->m_current_entry_list->scroll_pos_y + parameters.y_start;
@@ -252,15 +238,54 @@ void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
 	{
 		current_entry->display_pos_y = current_entry->pos_y;
 	}
+
+	const float entry_width = static_cast<float>(current_entry->text_width) + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
+	const float entry_height = static_cast<float>(current_entry->text_height) + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+
+	parameters.current_width = max(parameters.current_width, entry_width);
+
 	current_entry->is_visible = current_entry->display_pos_y >= parameters.y_start && current_entry->display_pos_y <= parameters.entry_max_pos_y;
 	if (current_entry->is_visible)
 	{
-		float tmpWidth = (float)current_entry->text_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
-		parameters.current_width = max(parameters.current_width, tmpWidth);
 		nglDrawText(parameters.current_entry_display_text, current_text_color, this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, current_entry->display_pos_y, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 	}
 
-	parameters.current_entry_pos_y += (float)current_entry->text_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	parameters.current_entry_pos_y += entry_height;
+}
+
+void debug_menu::adjust_height()
+{
+	const float entry_max_pos_y = this->get_max_pos_y_for_entries();
+	const debug_menu_entry* const last_entry = this->get_last_entry();
+	const bool overflow = last_entry->pos_y > entry_max_pos_y;
+	if (!overflow)
+	{
+		this->m_height = last_entry->pos_y + static_cast<float>(last_entry->text_height) + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	}
+	else
+	{
+		if (last_entry->display_pos_y > entry_max_pos_y)
+		{
+			this->m_height = this->get_menu_max_height();
+		}
+		else
+		{
+			this->m_height = last_entry->display_pos_y + static_cast<float>(last_entry->text_height) + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+		}
+	}
+}
+
+void debug_menu::draw_scroll_indicators()
+{
+	if (this->can_scoll_down())
+	{
+		nglDrawText(DEBUG_MENU_DOWN_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_down_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	}
+
+	if (this->can_scoll_up())
+	{
+		nglDrawText(DEBUG_MENU_UP_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_up_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
+	}
 }
 
 void debug_menu::draw()
@@ -270,8 +295,6 @@ void debug_menu::draw()
 
 	if (!this->m_current_entry_list->empty())
 	{
-		nglSetBoxRect(&this->m_ngl_box_data, this->m_window_pos_x, this->m_window_pos_y, this->m_width, this->m_height);
-		nglDrawBox(&this->m_ngl_box_data);
 		nglDrawText(this->m_current_entry_list->menu_title, RGBA_TO_INT(255, 255, 0, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->m_window_pos_y + DEBUG_MENU_TITLE_TOP_PADDING, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 
 		const float y_start = this->get_min_pos_y_for_entries();
@@ -281,15 +304,6 @@ void debug_menu::draw()
 		float current_entry_pos_y = y_start;
 		float current_width = this->m_default_width;
 		char current_entry_display_text[DEBUG_MENU_ENTRY_MAX_DISPLAY_TEXT_LENGTH] = {};
-
-		if (this->can_scoll_up())
-		{
-			current_width = max(current_width, (float)this->m_up_arrow_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING);
-		}
-		if (this->can_scoll_down())
-		{
-			current_width = max(current_width, (float)this->m_down_arrow_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING);
-		}
 
 		debug_menu_draw_entry_parameters draw_entry_parameters =
 		{
@@ -308,16 +322,15 @@ void debug_menu::draw()
 			draw_entry_parameters.current_entry_index = i;
 			this->draw_entry(draw_entry_parameters);
 		}
-		 
-		if (this->can_scoll_down())
-		{
-			nglDrawText(DEBUG_MENU_DOWN_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_down_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-		}
-		if (this->can_scoll_up())
-		{
-			nglDrawText(DEBUG_MENU_UP_ARROW, RGBA_TO_INT(217, 0, 255, 255), this->m_window_pos_x + DEBUG_MENU_ENTRY_LEFT_PADDING, this->get_up_scroll_indicator_pos_y(), DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-		}
+
 		this->m_width = draw_entry_parameters.current_width;
+
+		this->adjust_height();
+
+		this->draw_scroll_indicators();
+
+		nglSetWindowRect(&this->m_ngl_box_data, this->m_window_pos_x, this->m_window_pos_y, this->m_width, this->m_height);
+		nglDrawWindow(&this->m_ngl_box_data);
 	}
 }
 

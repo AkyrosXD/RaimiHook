@@ -7,7 +7,7 @@
 
 typedef unsigned int nglColor_t;
 
-struct nglBox
+struct nglWindow
 {
 	char data[104];
 };
@@ -16,30 +16,30 @@ struct nglBox
 /// Creates a new nglBox
 /// </summary>
 /// <param name="box">Pointer to the target nglBox</param>
-void nglConstructBox(nglBox* box);
+void nglConstructWindow(nglWindow* const window);
 
 /// <summary>
-/// Sets the position and the size of the nglBox
+/// Sets the position and the size of the nglWindow
 /// </summary>
-/// <param name="box">Target nglBox instance</param>
+/// <param name="window">Target nglWindow instance</param>
 /// <param name="x">X position</param>
 /// <param name="y">Y position</param>
 /// <param name="width">Width</param>
 /// <param name="height">Height</param>
-void nglSetBoxRect(nglBox* box, const float& x, const float& y, const float& width, const float& height);
+void nglSetWindowRect(nglWindow* const window, const float& x, const float& y, const float& width, const float& height);
 
 /// <summary>
-/// Sets the color of the nglBox
+/// Sets the color of the nglWindow
 /// </summary>
-/// <param name="box">Target nglBox</param>
+/// <param name="window">Target nglWindow</param>
 /// <param name="color">The color to set</param>
-void nglSetBoxColor(nglBox* box, const nglColor_t& color);
+void nglSetWindowColor(nglWindow* const window, const nglColor_t& color);
 
 /// <summary>
-/// Draws the nglBox
+/// Draws the nglWindow
 /// </summary>
 /// <param name="box">Target nglBox instance</param>
-void nglDrawBox(nglBox* box);
+void nglDrawWindow(nglWindow* const window);
 
 /// <summary>
 /// Calculates the size of the text
