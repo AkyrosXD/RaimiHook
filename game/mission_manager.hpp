@@ -2,6 +2,7 @@
 
 #include "singleton.hpp"
 #include "game.hpp"
+#include <list>
 
 /// <summary>
 /// Mission Status
@@ -59,20 +60,40 @@ class mission_manager : public singleton<mission_manager, 0xDE7D88>
 {
 private:
 	char unk0[220];
-	DWORD world_time;
+	DWORD world_time; // offset 220
 	char unk[112];
 
 public:
 	/// <summary>
 	/// Current status of mission manager
 	/// </summary>
-	E_MISSION_STATUS status;
+	E_MISSION_STATUS status; // offset 336
+
+private:
+	char unk2[252];
+
+public:
+	/// <summary>
+	/// A list of mission scripts getting prepared to be loaded
+	/// </summary>
+	std::list<void*>* scripts;
 
 	/// <summary>
-	/// Loads the mission or the cutscene
+	/// Prepares the script for the mission of the given script instance
 	/// </summary>
-	/// <param name="instance">Name of the instance. The names can be found in MEGACITY.PCPACK file.</param>
-	void load_story_instance(const char* instance);
+	/// <param name="instance">Name of the script instance. The names can be found in MEGACITY.PCPACK file.</param>
+	void prepare_mission_script_instance(const char* instance);
+
+	/// <summary>
+	/// Clears all the scripts that are currently being prepared
+	/// </summary>
+	void clear_scripts();
+
+	/// <summary>
+	/// Executes the current mission script
+	/// </summary>
+	/// <param name="script">The target script</param>
+	void execute_script(void* const& script);
 
 	/// <summary>
 	/// Ends the current mission

@@ -1,9 +1,21 @@
 #include "mission_manager.hpp"
 
-void mission_manager::load_story_instance(const char* instance)
+void mission_manager::prepare_mission_script_instance(const char* instance)
 {
 	DEFINE_FUNCTION(void*, __thiscall, 0x571C60, (mission_manager*, const char*));
 	sub_0x571C60(this, instance);
+}
+
+void mission_manager::clear_scripts()
+{
+	DEFINE_FUNCTION(void, __thiscall, 0x5FC4B0, (std::list<void*>*));
+	sub_0x5FC4B0(this->scripts);
+}
+
+void mission_manager::execute_script(void* const& script)
+{
+	DEFINE_FUNCTION(void, __thiscall, 0x564900, (mission_manager*, void*));
+	sub_0x564900(this, script);
 }
 
 void mission_manager::end_mission(const bool& success, const bool& abort_mission)

@@ -29,10 +29,6 @@
 
 #define RAIMIHOOK_VER_STR NGL_TEXT_WITH_COLOR("RaimiHook Version: 11 [DEV]", "DB7D09FF")
 
-#define CREATE_FN(RETURN_TYPE, CALLING_CONV, RVA, ARGS) \
-typedef RETURN_TYPE(CALLING_CONV* sub_##RVA##_t)ARGS; \
-sub_##RVA##_t sub_##RVA = (sub_##RVA##_t)##RVA \
-
 static debug_menu* s_DebugMenu;
 static debug_menu_entry* s_GameTimeSelect;
 static debug_menu_entry* s_GlassHouseLevelSelect;
@@ -63,7 +59,7 @@ static bool bBlacksuitRage = false;
 static bool bInfiniteCombo = false;
 static bool bInstantKill = false;
 
-enum class E_MISSION_SCRIPT_TYPE
+enum class E_RH_MISSION_SCRIPT_TYPE
 {
 	E_NONE,
 	E_SPAWN_POINT, // teleport player to a spawn point
@@ -72,10 +68,10 @@ enum class E_MISSION_SCRIPT_TYPE
 	E_PHOTO // teleport to robbie in daily bugle
 };
 
-typedef struct MissionScript
+typedef struct RHMissionScript
 {
 	const char* instance_name = "";
-	E_MISSION_SCRIPT_TYPE script_type = E_MISSION_SCRIPT_TYPE::E_NONE;
+	E_RH_MISSION_SCRIPT_TYPE script_type = E_RH_MISSION_SCRIPT_TYPE::E_NONE;
 	union ScriptPositionData
 	{
 		spawn_point_index_t spawn_point_index;
@@ -89,43 +85,43 @@ typedef struct MissionScript
 		region* region = nullptr;
 	} cache;
 
-	MissionScript(const char* const& instance_name)
+	RHMissionScript(const char* const& instance_name)
 	{
 		this->instance_name = instance_name;
 	}
 
-	MissionScript type(const E_MISSION_SCRIPT_TYPE& script_type)
+	RHMissionScript type(const E_RH_MISSION_SCRIPT_TYPE& script_type)
 	{
 		this->script_type = script_type;
 		return *this;
 	}
 
-	MissionScript spawn_point_index(const spawn_point_index_t& spawn_point_index)
+	RHMissionScript spawn_point_index(const spawn_point_index_t& spawn_point_index)
 	{
 		this->script_position_data.spawn_point_index = spawn_point_index;
 		return *this;
 	}
 
-	MissionScript spawm_region(const char* const& region_name)
+	RHMissionScript spawm_region(const char* const& region_name)
 	{
 		this->script_position_data.region_name = region_name;
 		return *this;
 	}
 
-	MissionScript spawn_position(const vector3d& absolute_position)
+	RHMissionScript spawn_position(const vector3d& absolute_position)
 	{
 		this->script_position_data.absolute_position = absolute_position;
 		return *this;
 	}
 
-	MissionScript checkpoints(const mission_checkpoint_t& start, const mission_checkpoint_t& end)
+	RHMissionScript checkpoints(const mission_checkpoint_t& start, const mission_checkpoint_t& end)
 	{
 		this->mission_checkpoint_start = start;
 		this->mission_checkpoint_end = end;
 		return *this;
 	}
 
-} MissionScript;
+} RHMissionScript;
 
 static const char* s_Heroes[] =
 {
@@ -135,221 +131,221 @@ static const char* s_Heroes[] =
 	"ch_peter"
 };
 
-static MissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
+static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 {
 	{
-		MissionScript("SWINGING_TUTORIAL_GO")
+		RHMissionScript("SWINGING_TUTORIAL_GO")
 	},
 	{
-		MissionScript("STORY_INSTANCE_MAD_BOMBER_1")
+		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_1")
 			.checkpoints(0, 5)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MAD_BOMBER_2")
-			.checkpoints(1, 6)
+		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_2")
+			.checkpoints(0, 6)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MAD_BOMBER_3")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_3")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(2)
 			.checkpoints(1, 7)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MAD_BOMBER_4")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_4")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("MA4I01")
 			.checkpoints(1, 5)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MAD_BOMBER_5")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_5")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(1)
 			.checkpoints(0, 3)
 	},
 	{
-		MissionScript("STORY_INSTANCE_LIZARD_1")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("STORY_INSTANCE_LIZARD_1")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(1)
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("STORY_INSTANCE_LIZARD_2")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_LIZARD_2")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("MB2I03")
 			.checkpoints(0, 2)
 	},
 	{
-		MissionScript("STORY_INSTANCE_LIZARD_3")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_LIZARD_3")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("MB3I02")
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_01")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("GANG_INSTANCE_ATOMIC_PUNK_01")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("H02")
 	},
 	{
-		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_05")
+		RHMissionScript("GANG_INSTANCE_ATOMIC_PUNK_05")
 			.checkpoints(1, 4)
 	},
 	{
-		MissionScript("GANG_INSTANCE_ATOMIC_PUNK_07")
+		RHMissionScript("GANG_INSTANCE_ATOMIC_PUNK_07")
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_01")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_01")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("N08I01")
 			.checkpoints(0, 2)
 	},
 	{
-		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_02")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_02")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("M07I01")
 	},
 	{
-		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_04")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_04")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(0)
 	},
 	{
-		MissionScript("GANG_INSTANCE_GOTHIC_LOLITA_05")
+		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_05")
 			.checkpoints(0, 1)
 	},
 	{
-		MissionScript("GANG_INSTANCE_PAN_ASIAN_01")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("GANG_INSTANCE_PAN_ASIAN_01")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(4)
 			.checkpoints(0, 2)
 	},
 	{
-		MissionScript("GANG_INSTANCE_PAN_ASIAN_05")
+		RHMissionScript("GANG_INSTANCE_PAN_ASIAN_05")
 			.checkpoints(1, 4)
 	},
 	{
-		MissionScript("GANG_INSTANCE_PAN_ASIAN_06")
+		RHMissionScript("GANG_INSTANCE_PAN_ASIAN_06")
 			.checkpoints(1, 5)
 	},
 	{
-		MissionScript("GANG_INSTANCE_PAN_ASIAN_07")
+		RHMissionScript("GANG_INSTANCE_PAN_ASIAN_07")
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("LOCATION_INSTANCE_DEWOLFE_1")
+		RHMissionScript("LOCATION_INSTANCE_DEWOLFE_1")
 			.checkpoints(1, 3)
 	},
 	{
-		MissionScript("LOCATION_INSTANCE_DEWOLFE_3")
+		RHMissionScript("LOCATION_INSTANCE_DEWOLFE_3")
 	},
 	{
-		MissionScript("LOCATION_INSTANCE_DEWOLFE_4")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("LOCATION_INSTANCE_DEWOLFE_4")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("J02")
 			.checkpoints(0, 2)
 	},
 	{
-		MissionScript("MJ_THRILLRIDE_H17_00")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("MJ_THRILLRIDE_H17_00")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("H17")
 	},
 	{
-		MissionScript("MJ_THRILLRIDE_H17_01")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("MJ_THRILLRIDE_H17_01")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("H17")
 	},
 	{
-		MissionScript("MJ_THRILLRIDE_H17_02")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("MJ_THRILLRIDE_H17_02")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("H17")
 	},
 	{
-		MissionScript("STORY_INSTANCE_SCORPION_2")
-			.type(E_MISSION_SCRIPT_TYPE::E_POSITION)
+		RHMissionScript("STORY_INSTANCE_SCORPION_2")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
 			.spawn_position(vector3d({ 3287.11f, 116.0f, 531.651f }))
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("STORY_INSTANCE_SCORPION_3")
+		RHMissionScript("STORY_INSTANCE_SCORPION_3")
 			.checkpoints(0, 5)
 	},
 	{
-		MissionScript("STORY_INSTANCE_SCORPION_5")
+		RHMissionScript("STORY_INSTANCE_SCORPION_5")
 			.checkpoints(0, 3)
 	},
 	{
-		MissionScript("STORY_INSTANCE_KINGPIN_1")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_KINGPIN_1")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("MD1I01")
 			.checkpoints(0, 1)
 	},
 	{
-		MissionScript("STORY_INSTANCE_KINGPIN_2")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_KINGPIN_2")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("MD2I01")
 			.checkpoints(0, 4)
 	},
 	{ 
-		MissionScript("BROCK_BEATDOWN")
-			.type(E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+		RHMissionScript("BROCK_BEATDOWN")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(1)
 	},
 	{
-		MissionScript("MJ_SCARERIDE_Q05_00")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("MJ_SCARERIDE_Q05_00")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("Q05")
 	},
 	{ 
-		MissionScript("LOCATION_INSTANCE_CONNORS_1")
+		RHMissionScript("LOCATION_INSTANCE_CONNORS_1")
 	},
 	{ 
-		MissionScript("LOCATION_INSTANCE_CONNORS_4")
+		RHMissionScript("LOCATION_INSTANCE_CONNORS_4")
 	},
 	{
-		MissionScript("STORY_INSTANCE_MOVIE_1")
+		RHMissionScript("STORY_INSTANCE_MOVIE_1")
 			.checkpoints(1, 3)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MOVIE_3")
-			.type(E_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+		RHMissionScript("STORY_INSTANCE_MOVIE_3")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("ME3I01")
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("STORY_INSTANCE_MOVIE_4")
+		RHMissionScript("STORY_INSTANCE_MOVIE_4")
 			.checkpoints(0, 4)
 	},
 	{
-		MissionScript("PHOTO_CITY_TOUR")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+		RHMissionScript("PHOTO_CITY_TOUR")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	},
 	{ 
-		MissionScript("PHOTO_BEAUTY_CONTEST_1")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+		RHMissionScript("PHOTO_BEAUTY_CONTEST_1")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	},
 	{ 
-		MissionScript("PHOTO_GANG_EXO_1")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+		RHMissionScript("PHOTO_GANG_EXO_1")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	},
 	{
-		MissionScript("PHOTO_EXOBITION_1")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+		RHMissionScript("PHOTO_EXOBITION_1")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	},
 	{ 
-		MissionScript("PHOTO_STUNTMAN")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
+		RHMissionScript("PHOTO_STUNTMAN")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	},
 	{
-		MissionScript("PHOTO_UFO")
-			.type(E_MISSION_SCRIPT_TYPE::E_PHOTO)
-	},
+		RHMissionScript("PHOTO_UFO")
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+	}
 };
 
 static const char* const s_Cutscenes[] =
 {
 	"STORY_INSTANCE_CUT_MC01",
 	"STORY_INSTANCE_CUT_MB04",
-	"STORY_INSTANCE_CUT_ME10"
+	"STORY_INSTANCE_CUT_ME10",
 };
 
 static const char* const s_WorldTimes[] =
@@ -691,12 +687,14 @@ void TeleportAllPedestriansToMe()
 	}
 }
 
-void LoadStoryInstance(const char* instance)
+void LoadCutscene(const char* instance)
 {
 	if (mission_manager::has_inst())
 	{
-		mission_manager::inst()->unload_current_mission();
-		mission_manager::inst()->load_story_instance(instance);
+		mission_manager::inst()->prepare_mission_script_instance(instance);
+		void* const script = mission_manager::inst()->scripts->front();
+		mission_manager::inst()->clear_scripts();
+		mission_manager::inst()->execute_script(script);
 	}
 }
 
@@ -734,21 +732,21 @@ void SpawnToNearestSpawnPoint()
 	}
 }
 
-void LoadMissionScript(MissionScript* mission)
+void LoadMissionScript(RHMissionScript* mission)
 {
 	if (!mission_manager::has_inst())
 		return;
 
-	mission_manager::inst()->unload_current_mission();
-
+	if (mission_manager::inst()->scripts->size() > 0)
+		return;
 
 	switch (mission->script_type)
 	{
-	case E_MISSION_SCRIPT_TYPE::E_SPAWN_POINT:
+	case E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT:
 		SpawnToPoint(mission->script_position_data.spawn_point_index);
 		break;
 
-	case E_MISSION_SCRIPT_TYPE::E_LOAD_REGION:
+	case E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION:
 		if (mission->cache.region == nullptr)
 		{
 			mission->cache.region = GetRegionByName(mission->script_position_data.region_name);
@@ -760,7 +758,7 @@ void LoadMissionScript(MissionScript* mission)
 		LoadInterior(mission->cache.region);
 		break;
 
-	case E_MISSION_SCRIPT_TYPE::E_PHOTO:
+	case E_RH_MISSION_SCRIPT_TYPE::E_PHOTO:
 		if (mission->cache.region == nullptr)
 		{
 			mission->cache.region = GetRegionByName("DBGI02");
@@ -772,10 +770,9 @@ void LoadMissionScript(MissionScript* mission)
 		LoadInterior(mission->cache.region);
 		vector3d robbie_pos = vector3d({ 1282.294f, 115.510f, 177.337f });
 		world::inst()->set_hero_rel_position(robbie_pos);
-
 		break;
 
-	case E_MISSION_SCRIPT_TYPE::E_POSITION:
+	case E_RH_MISSION_SCRIPT_TYPE::E_POSITION:
 		world::inst()->set_hero_rel_position(mission->script_position_data.absolute_position);
 		break;
 
@@ -783,39 +780,19 @@ void LoadMissionScript(MissionScript* mission)
 		break;
 	}
 
-	std::make_unique<std::thread>([mission]() {
+	mission_manager::inst()->prepare_mission_script_instance(mission->instance_name);
+	
+	mission_checkpoint_t* const checkpointPtr = game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint");
 
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-
-		while (mission_manager::inst()->status != E_MISSION_STATUS::CRIME_SEARCHING)
-		{
-			mission_manager::inst()->unload_current_mission();
-			std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		}
-
-		mission_manager::inst()->load_story_instance(mission->instance_name);
-
-		if (mission->mission_checkpoint_start > static_cast<mission_checkpoint_t>(0))
-		{
-			const ULONGLONG MAX_TICKS = 10000;
-			const ULONGLONG startTicks = GetTickCount64();
-
-			mission_checkpoint_t* const checkpointPtr = game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint");
-
-			while (mission_manager::inst()->status != E_MISSION_STATUS::MISSION_IN_PROGRESS)
-			{
-				if ((GetTickCount64() - startTicks) > MAX_TICKS)
-					break;
-
-				*checkpointPtr = mission->mission_checkpoint_start;
-			}
-		}
-	})->detach();
+	void* const script = mission_manager::inst()->scripts->front();
+	mission_manager::inst()->clear_scripts();
+	mission_manager::inst()->execute_script(script);
+	*checkpointPtr = mission->mission_checkpoint_start;
 }
 
 void UpdateGameTimeEntry()
 {
-	if (s_GameTimeSelect != nullptr && !s_GameTimeSelect->sublist->empty())
+	if (s_GameTimeSelect != nullptr && !s_GameTimeSelect->sublist->empty() && mission_manager::has_inst())
 	{
 		const DWORD hours = mission_manager::inst()->get_world_time().hours;
 		s_GameTimeSelect->sublist->selected_entry_index = hours;
@@ -1061,9 +1038,9 @@ void CreateMissionManagerEntry()
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
 	debug_menu_entry* const loadMissionMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Mission", nullptr, nullptr);
-	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(MissionScript); i++)
+	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(RHMissionScript); i++)
 	{
-		MissionScript* mission = s_MissionsScripts + i;
+		RHMissionScript* mission = s_MissionsScripts + i;
 		if (mission->mission_checkpoint_end > static_cast<mission_checkpoint_t>(0))
 		{
 			debug_menu_entry* const selectedMissionMenu = loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, mission->instance_name, nullptr, nullptr);
@@ -1072,7 +1049,7 @@ void CreateMissionManagerEntry()
 				char* checkpoint_name = new char[strlen(mission->instance_name) + 3];
 				sprintf(checkpoint_name, "%s_%02d", mission->instance_name, static_cast<int>(i));
 
-				MissionScript* const checkpointScript = new MissionScript(mission->instance_name);
+				RHMissionScript* const checkpointScript = new RHMissionScript(mission->instance_name);
 				checkpointScript->script_type = mission->script_type;
 				checkpointScript->script_position_data = mission->script_position_data;
 				checkpointScript->cache = mission->cache;
@@ -1090,7 +1067,7 @@ void CreateMissionManagerEntry()
 	for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
 	{
 		const char* cutscene = s_Cutscenes[i];
-		cutscenesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, cutscene, &LoadStoryInstance, (void*)cutscene);
+		cutscenesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, cutscene, &LoadCutscene, (void*)cutscene);
 	}
 }
 
