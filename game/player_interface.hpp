@@ -9,7 +9,7 @@
 class player_interface
 {
 private:
-	char unk0[219];
+	char unk0[876];
 public:
 	/// <summary>
 	/// Current value of the combo meter
@@ -26,7 +26,7 @@ public:
 	/// </summary>
 	float combo_meter_max_value;
 private:
-	char unk1[821];
+	char unk1[657];
 public:
 	/// <summary>
 	/// Create a new player_interface instance

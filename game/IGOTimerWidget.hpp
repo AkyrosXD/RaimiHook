@@ -29,18 +29,6 @@ public:
 	/// Fading time between the timer becoming visible to invisible and vice-versa
 	/// </summary>
 	float FadeTime;
-private:
-	char unk3[8];
-public:
-	/// <summary>
-	/// Progress of the fading of the timer when changing visibility
-	/// </summary>
-	float FadeProgress;
-
-	/// <summary>
-	/// The color of the timer widget
-	/// </summary>
-	int Color;
 
 	/// <summary>
 	/// Sets the color of the timer

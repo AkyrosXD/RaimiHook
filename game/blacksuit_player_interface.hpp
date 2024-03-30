@@ -9,7 +9,7 @@
 class blacksuit_player_interface : player_interface
 {
 private:
-	char unk[976];
+	char unk[483];
 public:
 	/// <summary>
 	/// Current value of the rage meter

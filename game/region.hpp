@@ -2,6 +2,44 @@
 
 #include "numerics.hpp"
 
+typedef unsigned char region_flag_t;
+
+enum class E_REGION_FLAGS : region_flag_t
+{
+	E_UNLOADED = 0,
+	E_LOADED = 0xFE
+};
+
+inline E_REGION_FLAGS operator &(E_REGION_FLAGS a, E_REGION_FLAGS b)
+{
+	return static_cast<E_REGION_FLAGS>(static_cast<region_flag_t>(a) & static_cast<region_flag_t>(b));
+}
+
+inline E_REGION_FLAGS operator |(E_REGION_FLAGS a, E_REGION_FLAGS b)
+{
+	return static_cast<E_REGION_FLAGS>(static_cast<region_flag_t>(a) | static_cast<region_flag_t>(b));
+}
+
+inline E_REGION_FLAGS operator ^(E_REGION_FLAGS a, E_REGION_FLAGS b)
+{
+	return static_cast<E_REGION_FLAGS>(static_cast<region_flag_t>(a) ^ static_cast<region_flag_t>(b));
+}
+
+inline E_REGION_FLAGS& operator &=(E_REGION_FLAGS& a, E_REGION_FLAGS b)
+{
+	return reinterpret_cast<E_REGION_FLAGS&>(reinterpret_cast<region_flag_t&>(a) &= static_cast<region_flag_t>(b));
+}
+
+inline E_REGION_FLAGS& operator |=(E_REGION_FLAGS& a, E_REGION_FLAGS b)
+{
+	return reinterpret_cast<E_REGION_FLAGS&>(reinterpret_cast<region_flag_t&>(a) |= static_cast<region_flag_t>(b));
+}
+
+inline E_REGION_FLAGS& operator ^=(E_REGION_FLAGS& a, E_REGION_FLAGS b)
+{
+	return reinterpret_cast<E_REGION_FLAGS&>(reinterpret_cast<region_flag_t&>(a) ^= static_cast<region_flag_t>(b));
+}
+
 #pragma pack(push, 1)
 /// <summary>
 /// region struct
@@ -10,11 +48,11 @@ struct region
 {
 	char unk0[148];
 	/// <summary>
-	/// Loading state
+	/// Region flags
 	/// </summary>
-	DWORD load_state; // offset = 148
+	E_REGION_FLAGS flags; // offset = 148
 
-	char unk1[36];
+	char unk1[39];
 
 	/// <summary>
 	/// Region name

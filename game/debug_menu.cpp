@@ -372,15 +372,11 @@ void debug_menu::handle_input()
 
 	const bool up = input_mgr::is_key_pressed_once(VK_W)
 		|| input_mgr::is_key_pressed_repeated(VK_W)
-		|| input_mgr::is_key_pressed_once(VK_UP)
-		|| input_mgr::is_key_pressed_repeated(VK_UP)
 		|| xenon_input_mgr::left_thumb_up_once()
 		|| xenon_input_mgr::left_thumb_up_repeat();
 
 	const bool down = input_mgr::is_key_pressed_once(VK_S)
 		|| input_mgr::is_key_pressed_repeated(VK_S)
-		|| input_mgr::is_key_pressed_once(VK_DOWN)
-		|| input_mgr::is_key_pressed_repeated(VK_DOWN)
 		|| xenon_input_mgr::left_thumb_down_once()
 		|| xenon_input_mgr::left_thumb_down_repeat();
 
@@ -388,16 +384,12 @@ void debug_menu::handle_input()
 	const bool right =
 		input_mgr::is_key_pressed_once(VK_D)
 		|| input_mgr::is_key_pressed_repeated(VK_D)
-		|| input_mgr::is_key_pressed_once(VK_RIGHT)
-		|| input_mgr::is_key_pressed_repeated(VK_RIGHT)
 		|| xenon_input_mgr::left_thumb_right_once()
 		|| xenon_input_mgr::left_thumb_right_repeat();
 
 
 	const bool left = input_mgr::is_key_pressed_once(VK_A)
 		|| input_mgr::is_key_pressed_repeated(VK_A)
-		|| input_mgr::is_key_pressed_once(VK_LEFT)
-		|| input_mgr::is_key_pressed_repeated(VK_LEFT)
 		|| xenon_input_mgr::left_thumb_left_once()
 		|| xenon_input_mgr::left_thumb_left_repeat();
 	

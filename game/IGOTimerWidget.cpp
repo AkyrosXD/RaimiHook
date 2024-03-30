@@ -3,7 +3,7 @@
 void IGOTimerWidget::SetColor(const int& color, const float& transition_time)
 {
 	DEFINE_FUNCTION(void, __thiscall, 0x6B5750, (IGOTimerWidget*, int, float));
-	sub_0x6B5750(this, color, 0);
+	sub_0x6B5750(this, color, transition_time);
 }
 
 void IGOTimerWidget::SetVisible(const bool& value)
