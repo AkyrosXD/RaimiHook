@@ -300,7 +300,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_01")
-		.specific_checkpoints_scripts({
+			.specific_checkpoints_scripts({
 				RHCheckpointScript(0)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 					.spawm_region("N08I01"),
@@ -358,8 +358,8 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{
 		RHMissionScript("LOCATION_INSTANCE_DEWOLFE_1")
 			.checkpoints(1, 3)
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
-			.spawn_position(vector3d({ 2120.715f, 25, 1278.130f }))
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("G19I01")
 	},
 	{
 		RHMissionScript("LOCATION_INSTANCE_DEWOLFE_3")
@@ -429,9 +429,35 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{ 
 		RHMissionScript("LOCATION_INSTANCE_CONNORS_1")
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(0),
+
+				RHCheckpointScript(3)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({273.641f, -194.725f, -606.589f})),
+
+				RHCheckpointScript(4)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({-494.323f, -168.920f, -363.920f}))
+			})
 	},
 	{ 
 		RHMissionScript("LOCATION_INSTANCE_CONNORS_4")
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(0),
+
+				RHCheckpointScript(1)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("MB2I01"),
+
+				RHCheckpointScript(2)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({-2006.510f, -196.804f, -460.531f})),
+
+				RHCheckpointScript(3)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({-1532.684f, -176.212f, -374.370f}))
+			})
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MOVIE_1")
@@ -906,6 +932,10 @@ void LoadMissionScript(RHCheckpointScript* mission)
 		break;
 
 	case E_RH_MISSION_SCRIPT_TYPE::E_POSITION:
+		if (mission->script_position_data.absolute_position.y < 0)
+		{
+			UnlockAllUndergroundInteriors();
+		}
 		world::inst()->set_hero_rel_position(mission->script_position_data.absolute_position);
 		break;
 
@@ -1054,6 +1084,8 @@ bool NGLMenuOnShow()
 	void* v12 = *v9;
 	DWORD current_player = (DWORD)((void*)((DWORD)v12 + 84));
 	bool x = *(bool*)(current_player + 8);
+
+	std::cout << *game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint") << "\n";
 
 	UpdateGameTimeEntry();
 
