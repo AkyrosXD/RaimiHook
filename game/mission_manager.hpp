@@ -101,10 +101,10 @@ public:
 	/// <param name="success">If the mission ends sucessfully or not.
 	/// if this is set to false, the current mission will end with the message that the mission failed
 	/// </param>
-	/// <param name="abort_mission">If the mission should be aborted or not.
+	/// <param name="skip_screen">If the mission status screen should be skipped.
 	/// If the 'success' is set to false, this parameter will be ignored.
 	/// </param>
-	void end_mission(const bool& success, const bool& abort_mission);
+	void end_mission(const bool& success, const bool& skip_screen);
 
 	/// <summary>
 	/// Terminates the current mission.

@@ -18,10 +18,10 @@ void mission_manager::execute_script(void* const& script)
 	sub_0x564900(this, script);
 }
 
-void mission_manager::end_mission(const bool& success, const bool& abort_mission)
+void mission_manager::end_mission(const bool& success, const bool& skip_screen)
 {
 	DEFINE_FUNCTION(void*, __thiscall, 0x5710E0, (mission_manager*, bool, bool));
-	sub_0x5710E0(this, success, abort_mission);
+	sub_0x5710E0(this, success, skip_screen);
 }
 
 void mission_manager::unload_current_mission()

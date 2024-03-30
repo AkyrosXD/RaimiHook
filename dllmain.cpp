@@ -250,9 +250,36 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_3")
-			.checkpoints(1, 7)
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
-			.spawn_point_index(2)
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(1)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2),
+
+				RHCheckpointScript(2)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2),
+
+				RHCheckpointScript(3)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({2596, 88, 857.203f})),
+
+				RHCheckpointScript(4)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2),
+
+				RHCheckpointScript(5)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2),
+
+				RHCheckpointScript(6)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2),
+
+				RHCheckpointScript(7)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
+					.spawn_point_index(2)
+			})
+
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_4")
@@ -317,9 +344,19 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_02")
-			.checkpoints(0, 1)
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-			.spawm_region("M07I01")
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(0)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("M07I01"),
+
+				RHCheckpointScript(1)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("M07I01"),
+
+				RHCheckpointScript(2)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position({-320.349f, 5, 1432.874f})
+			})
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_04")
@@ -339,7 +376,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_PAN_ASIAN_01")
-			.checkpoints(0, 2)
+			.checkpoints({0, 2})
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
 			.spawn_point_index(4)
 	},
@@ -403,7 +440,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_SCORPION_5")
-			.checkpoints(0, 3)
+			.checkpoints({0, 2, 3})
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_KINGPIN_1")
@@ -419,13 +456,14 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{ 
 		RHMissionScript("BROCK_BEATDOWN")
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
-			.spawn_point_index(1)
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("DBGI01")
 	},
 	{
 		RHMissionScript("MJ_SCARERIDE_Q05_00")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
 			.spawm_region("Q05")
+			.delay_load()
 	},
 	{ 
 		RHMissionScript("LOCATION_INSTANCE_CONNORS_1")
@@ -461,7 +499,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MOVIE_1")
-			.checkpoints(1, 3)
+			.checkpoints({0, 2, 3})
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MOVIE_3")
@@ -471,7 +509,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MOVIE_4")
-			.checkpoints(0, 4)
+			.checkpoints({0, 2, 3, 4})
 	},
 	{
 		RHMissionScript("PHOTO_CITY_TOUR")
@@ -627,14 +665,26 @@ void KillHero()
 
 void FailCurrentMission()
 {
-	mission_manager::inst()->end_mission(false, true);
+	if (mission_manager::has_inst() && mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
+	{
+		//mission_manager::inst()->end_mission(false, true);
+		mission_manager::inst()->end_mission(false, false);
+	}
 }
 
 void CompleteCurrentMission()
 {
-	if (mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
+	if (mission_manager::has_inst() && mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
 	{
 		mission_manager::inst()->end_mission(true, false);
+	}
+}
+
+void AbortCurrentMission()
+{
+	if (mission_manager::has_inst() && mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
+	{
+		mission_manager::inst()->end_mission(false, true);
 	}
 }
 
@@ -899,6 +949,8 @@ void LoadMissionScript(RHCheckpointScript* mission)
 	if (mission_manager::inst()->scripts->size() > 0)
 		return;
 
+	mission_manager::inst()->unload_current_mission();
+
 	switch (mission->script_type)
 	{
 	case E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT:
@@ -1085,8 +1137,6 @@ bool NGLMenuOnShow()
 	DWORD current_player = (DWORD)((void*)((DWORD)v12 + 84));
 	bool x = *(bool*)(current_player + 8);
 
-	std::cout << *game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint") << "\n";
-
 	UpdateGameTimeEntry();
 
 	UpdateGlassHouseLevelEntry();
@@ -1211,6 +1261,7 @@ void CreateMissionManagerEntry()
 	debug_menu_entry* const missionManagerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Mission Manager", nullptr, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
+	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Abort Mission", &AbortCurrentMission, nullptr);
 	debug_menu_entry* const loadMissionMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Mission", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(RHMissionScript); i++)
 	{
@@ -1470,30 +1521,6 @@ void AllocDebugConsole()
 	(void)(freopen("CONOUT$", "w", stdout));
 }
 #endif // _DEBUG
-
-typedef int (*sub_7A4430_t)(void*, const char*, int);
-static sub_7A4430_t original_sub_7A4430;
-int __cdecl sub_7A4430_hook(void* a1, const char* a2, int a3)
-{
-	if (world::has_inst() && world::inst()->hero_entity != nullptr)
-	{
-		if (a2 != nullptr)
-		{
-			//std::cout << a2 << "\n";
-			if (strcmp(a2, "ma01_intro") == 0)
-			{
-				std::cout << a3 << "\n";
-				//a2 = "ma02_hostage";
-				a2 = "mc01_intro";
-			}
-			//if (strcmp(a2, "MA01_INTRO") == 0)
-			//{
-			//	std::cout << _ReturnAddress() << "\n";
-			//}
-		}
-	}
-	return original_sub_7A4430(a1, a2, a3);
-}
 
 void StartThread(HANDLE mainThread)
 {
