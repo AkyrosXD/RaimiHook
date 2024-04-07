@@ -31,3 +31,12 @@ public:
 	/// <param name="value">the value of field of view to set</param>
 	void set_fov(const int& value);
 };
+
+/// <summary>
+/// Camera settings struct
+/// </summary>
+struct camera_settings
+{
+	char unk[92];
+	bool is_user_mode;
+};

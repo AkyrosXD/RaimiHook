@@ -46,15 +46,64 @@ public:
 /// </summary>
 struct entity_transform
 {
-	/// <summary>
-	/// A 4x3 matrix for where the entity is facing
-	/// </summary>
-	float facing[4*3];
+	float yaw;
+	float unk4;
+	float yaw2;
+	float unk3[2];
+	float pitch2;
+	float unk2[2];
+	float real_yaw;
+	float pitch;
+	float unk[2];
 
 	/// <summary>
 	/// The world position of the entity
 	/// </summary>
 	vector3d position;
+
+	inline vector3d forward() const
+	{
+		vector3d result{};
+		result.z = sinf(this->yaw);
+		result.y = sinf(this->pitch);
+		result.x = -sinf(this->yaw2);
+		return result;
+	}
+
+	inline vector3d back() const
+	{
+		vector3d result{};
+		result.x = sinf(this->yaw2);
+		result.y = -sinf(this->pitch);
+		result.z = -sinf(this->yaw);
+		return result;
+	}
+
+	inline vector3d right() const
+	{
+		vector3d result{};
+		result.x = -sinf(this->yaw);
+		result.z = -sinf(this->yaw2);
+		return result;
+	}
+
+	inline vector3d left() const
+	{
+		vector3d result{};
+		result.x = sinf(this->yaw);
+		result.z = sinf(this->yaw2);
+		return result;
+	}
+
+	inline vector3d up() const
+	{
+		return vector3d({ 0, 1, 0 });
+	}
+
+	inline vector3d down() const
+	{
+		return vector3d({ 0, -1, 0 });
+	}
 };
 #pragma pack(pop)
 
@@ -89,7 +138,7 @@ public:
 	/// Sets the relative world position of the entity
 	/// </summary>
 	/// <param name="position">The target position</param>
-	void set_rel_position(vector3d& position);
+	void set_rel_position(vector3d position);
 
 	/// <summary>
 	/// Gets the 2D interface of the entity

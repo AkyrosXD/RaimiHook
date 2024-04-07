@@ -29,6 +29,8 @@
 
 #define RAIMIHOOK_VER_STR NGL_TEXT_WITH_COLOR("RaimiHook Version: 11 [DEV]", "DB7D09FF")
 
+#define DEBUG_MENU_PAUSE_TYPE 5
+
 static debug_menu* s_DebugMenu;
 static debug_menu_entry* s_GameTimeSelect;
 static debug_menu_entry* s_GlassHouseLevelSelect;
@@ -251,17 +253,15 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{
 		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_3")
 			.specific_checkpoints_scripts({
-				RHCheckpointScript(1)
-					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
-					.spawn_point_index(2),
+				RHCheckpointScript(1),
 
 				RHCheckpointScript(2)
-					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
-					.spawn_point_index(2),
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ 2674.779f, 20, 375 })),
 
 				RHCheckpointScript(3)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
-					.spawn_position(vector3d({2596, 88, 857.203f})),
+					.spawn_position(vector3d({ 2596, 88, 857.203f })),
 
 				RHCheckpointScript(4)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_SPAWN_POINT)
@@ -283,9 +283,25 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_4")
-			.checkpoints(1, 5)
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-			.spawm_region("MA4I01")
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(1),
+
+				RHCheckpointScript(2)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -2479.906f, 8, -1018.858f })),
+
+				RHCheckpointScript(3)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -2515, 8, -1018.858f })),
+
+				RHCheckpointScript(4)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("MA4I06"),
+
+				RHCheckpointScript(5)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("MA4I03")
+			})
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_MAD_BOMBER_5")
@@ -472,11 +488,11 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 
 				RHCheckpointScript(3)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
-					.spawn_position(vector3d({273.641f, -194.725f, -606.589f})),
+					.spawn_position(vector3d({ 273.641f, -194.725f, -606.589f })),
 
 				RHCheckpointScript(4)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
-					.spawn_position(vector3d({-494.323f, -168.920f, -363.920f}))
+					.spawn_position(vector3d({ -494.323f, -168.920f, -363.920f }))
 			})
 	},
 	{ 
@@ -588,6 +604,12 @@ static const float s_MovementSpeeds[] =
 	200
 };
 
+static const char* const s_CameraModes[] =
+{
+	"Chase",
+	"User"
+};
+
 void ChangeHero(const char* hero)
 {
 	// this is needed to unlock the races
@@ -667,7 +689,6 @@ void FailCurrentMission()
 {
 	if (mission_manager::has_inst() && mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
 	{
-		//mission_manager::inst()->end_mission(false, true);
 		mission_manager::inst()->end_mission(false, false);
 	}
 }
@@ -726,6 +747,14 @@ void SetTimerColor()
 	const int color = RGBA_TO_INT(r, g, b, 255);
 	g_femanager->IGO->TimerWidget->SetVisible(true);
 	g_femanager->IGO->TimerWidget->SetColor(color, 0.0f);
+}
+
+void SetCameraMode()
+{
+	if (game::has_inst())
+	{
+		game::inst()->camera_settings->is_user_mode = static_cast<bool>(s_CameraModeSelect->sublist->selected_entry_index);
+	}
 }
 
 struct MenuRegionStrip
@@ -857,7 +886,7 @@ void TeleportAllEntitiesToMe()
 
 void TeleportToNearestEntity()
 {
-	float min_dist = (float)0xFFFFFF;
+	float min_dist = static_cast<float>(0xFFFFFF);
 	const entity* target = nullptr;
 	const entity* const hero = world::inst()->hero_entity;
 	for (const entity_node* node = game::get_entities(); (node != nullptr); node = node->next)
@@ -1043,6 +1072,14 @@ void UpdateTimerEntry()
 	}
 }
 
+void UpdateCameraEntry()
+{
+	if (s_CameraModeSelect != nullptr && game::has_inst())
+	{
+		s_CameraModeSelect->sublist->selected_entry_index = static_cast<size_t>(game::inst()->camera_settings->is_user_mode);
+	}
+}
+
 void UpdateWarpEntry()
 {
 	if (s_WarpButton != nullptr && s_WarpButton->sublist->empty())
@@ -1127,15 +1164,8 @@ bool NGLMenuOnShow()
 	{
 		return false;
 	}
-	else
-	{
-		app::inst()->game_inst->toggle_pause();
-	}
 
-	void** v9 = (void**)(*(DWORD*)0xDE7A1C + 80);
-	void* v12 = *v9;
-	DWORD current_player = (DWORD)((void*)((DWORD)v12 + 84));
-	bool x = *(bool*)(current_player + 8);
+	game::inst()->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
 
 	UpdateGameTimeEntry();
 
@@ -1153,8 +1183,12 @@ bool NGLMenuOnHide()
 	game* const g = app::inst()->game_inst;
 	if (g->paused)
 	{
-		g->toggle_pause();
+		if (g->pause_type == DEBUG_MENU_PAUSE_TYPE)
+		{
+			g->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
+		}
 	}
+
 	return true;
 }
 
@@ -1254,6 +1288,12 @@ void CreateCameraEntry()
 	}
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
+	s_CameraModeSelect = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Camera Mode", nullptr, nullptr);
+	for (size_t i = 0; i < sizeof(s_CameraModes) / sizeof(const char*); i++)
+	{
+		const char* mode = s_CameraModes[i];
+		s_CameraModeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mode, &SetCameraMode, nullptr);
+	}
 }
 
 void CreateMissionManagerEntry()

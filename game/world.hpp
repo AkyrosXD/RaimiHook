@@ -22,6 +22,6 @@ public:
 	/// Sets the world position of the current hero
 	/// </summary>
 	/// <param name="position">Target position</param>
-	void set_hero_rel_position(vector3d& position);
+	void set_hero_rel_position(vector3d position);
 };
 #pragma pack(pop)

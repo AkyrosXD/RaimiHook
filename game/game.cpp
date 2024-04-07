@@ -15,8 +15,8 @@ region* game::get_regions()
 	return **(region***)0x00F23780;
 }
 
-void game::toggle_pause()
+void game::toggle_pause(const int& type)
 {
 	DEFINE_FUNCTION(void, __thiscall, 0x7F6E10, (game*, int));
-	sub_0x7F6E10(this, 4);
+	sub_0x7F6E10(this, type);
 }

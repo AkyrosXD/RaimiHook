@@ -341,13 +341,6 @@ void debug_menu::handle_input()
 		return;
 	}
 
-	// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-
-	const int VK_A = 0x41;
-	const int VK_D = 0x44;
-	const int VK_W = 0x57;
-	const int VK_S = 0x53;
-
 	input_mgr::initialize();
 
 	if (!xenon_input_mgr::is_initialized())

@@ -2,6 +2,13 @@
 
 #include <Windows.h>
 
+// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+
+#define VK_A 0x41
+#define VK_D 0x44
+#define VK_S 0x53
+#define VK_W 0x57
+
 /// <summary>
 /// Input type
 /// </summary>

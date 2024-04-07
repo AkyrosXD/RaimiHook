@@ -11,7 +11,7 @@ entity_health_data* entity::get_health_data() const
 	return reinterpret_cast<entity_health_data*>(this->get_data(ENTIY_DATA_ID_HEALTH));
 }
 
-void entity::set_rel_position(vector3d& position)
+void entity::set_rel_position(vector3d position)
 {
 	DEFINE_FUNCTION(void, __cdecl, 0x739030, (entity*, vector3d*));
 	DEFINE_FUNCTION(void, __thiscall, 0x73AF20, (entity*));

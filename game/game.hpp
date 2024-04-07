@@ -27,12 +27,23 @@ public:
 	/// </summary>
 	bool paused;
 private:
-	char unk1[19];
+	char unk1[7];
+public:
+	/// <summary>
+	/// Possibly camera settings
+	/// </summary>
+	camera_settings* camera_settings;
+private:
+	char unk2[8];
 public:
 	/// <summary>
 	/// Main camera object instance
 	/// </summary>
 	camera* spider_camera;
+private:
+	char unk3[16];
+public:
+	int pause_type;
 
 	/// <summary>
 	/// Gets the list of entities
@@ -55,7 +66,7 @@ public:
 	/// <summary>
 	/// Pauses or resumes the game
 	/// </summary>
-	void toggle_pause();
+	void toggle_pause(const int& type);
 };
 #pragma pack(pop)
 
