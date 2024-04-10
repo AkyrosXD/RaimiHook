@@ -31,7 +31,7 @@
 
 #define DEBUG_MENU_PAUSE_TYPE 5
 
-static debug_menu* s_DebugMenu;
+static std::shared_ptr<debug_menu> s_DebugMenu;
 static debug_menu_entry* s_GameTimeSelect;
 static debug_menu_entry* s_GlassHouseLevelSelect;
 static debug_menu_entry* s_WarpButton;
@@ -318,9 +318,39 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_LIZARD_2")
-			.checkpoints({0, 1, 2, 7, 8})
-			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-			.spawm_region("MB2I03")
+			.specific_checkpoints_scripts({
+				RHCheckpointScript(0),
+
+				RHCheckpointScript(1),
+
+				RHCheckpointScript(2)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -1538.952f, -177.150f, -352.311f })),
+
+				RHCheckpointScript(3)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -1702.201f, -170, -785.925f })),
+
+				RHCheckpointScript(4)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -2384.687f, -160.800f, -489.823f })),
+
+				RHCheckpointScript(5)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -2384.390f, -251, -396.396f })),
+
+				RHCheckpointScript(6)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
+					.spawn_position(vector3d({ -2200.871f, -238, -275.614f })),
+				
+				RHCheckpointScript(7)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("MB2I03"),
+				
+				RHCheckpointScript(8)
+					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+					.spawm_region("MB2I03"),
+		})
 	},
 	{
 		RHMissionScript("STORY_INSTANCE_LIZARD_3")
@@ -1165,6 +1195,8 @@ bool NGLMenuOnShow()
 		return false;
 	}
 
+	std::cout << *game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint") << "\n";
+
 	game::inst()->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
 
 	UpdateGameTimeEntry();
@@ -1198,7 +1230,7 @@ static const uintptr_t NGL_PRESENT_ADDRESS = 0x8CD650;
 
 void InitializeDebugMenu()
 {
-	s_DebugMenu = new debug_menu("RaimiHook", 10.0f, 10.0f);
+	s_DebugMenu = std::make_shared<debug_menu>("RaimiHook", 10.0f, 10.0f);
 	s_DebugMenu->set_on_hide(&NGLMenuOnHide);
 	s_DebugMenu->set_on_show(&NGLMenuOnShow);
 }
@@ -1226,9 +1258,9 @@ void CreateHeroEntry()
 	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default Spawn Point", &SpawnToPoint, (void*)1);
 	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 	{
-		char* idxBuffer = new char[20];
-		sprintf(idxBuffer, "Spawn Point %02d", (int)i);
-		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer, &SpawnToPoint, (void*)i);
+		std::unique_ptr<char> idxBuffer = std::unique_ptr<char>(new char[20]);
+		sprintf(idxBuffer.get(), "Spawn Point %02d", (int)i);
+		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer.get(), &SpawnToPoint, (void*)i);
 	}
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "God Mode", &bGodMode, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Spidey Infinite Combo Meter", &bInfiniteCombo, nullptr);
