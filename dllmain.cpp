@@ -412,22 +412,8 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_01")
-			.specific_checkpoints_scripts({
-				RHCheckpointScript(0)
-					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-					.spawm_region("N08I01")
-					.delay_load(),
-
-				RHCheckpointScript(1)
-					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-					.spawm_region("N08I01")
-					.delay_load(),
-
-				RHCheckpointScript(2)
-					.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
-					.spawm_region("M20I02")
-					.delay_load(),
-			})
+			.type(E_RH_MISSION_SCRIPT_TYPE::E_LOAD_REGION)
+			.spawm_region("N08I01")
 	},
 	{
 		RHMissionScript("GANG_INSTANCE_GOTHIC_LOLITA_02")
@@ -732,29 +718,6 @@ region* GetRegionByName(const char* s)
 		}
 	}
 	return nullptr;
-}
-
-const region* GetClosestRegion()
-{
-	float min_dist = static_cast<float>(0xFFFFFF);
-	const region* target = nullptr;
-	const entity* const hero = world::inst()->hero_entity;
-	region* const regions = game::get_regions();
-	if (regions != nullptr)
-	{
-		for (size_t i = 0; i < SM3_REGIONS_COUNT; i++)
-		{
-			const region* const currentRegion = regions + i;
-			const float dist = vector3d::distance(hero->transform->position, currentRegion->pos_1);
-			if (dist < min_dist)
-			{
-				min_dist = dist;
-				target = currentRegion;
-			}
-		}
-	}
-
-	return target;
 }
 
 void UnlockAllUndergroundInteriors()
@@ -1275,9 +1238,6 @@ bool NGLMenuOnShow()
 	{
 		return false;
 	}
-
-	std::cout << *game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint") << "\n";
-	std::cout << GetClosestRegion()->name << "\n";
 
 	game::inst()->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
 
