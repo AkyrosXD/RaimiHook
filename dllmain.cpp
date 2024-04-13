@@ -1248,6 +1248,8 @@ bool NGLMenuOnShow()
 
 	UpdateTimerEntry();
 
+	UpdateCameraEntry();
+
 	UpdateWarpEntry();
 
 	return true;
