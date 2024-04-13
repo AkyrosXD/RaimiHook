@@ -3,7 +3,7 @@
 debug_menu::debug_menu(const char* title, float x, float y)
 {
 	this->m_is_open = false;
-	this->m_default_entry_list = new debug_menu_entry_list(title);
+	this->m_default_entry_list = std::make_unique<debug_menu_entry_list>(title);
 	this->m_current_entry_list = this->m_default_entry_list;
 	this->on_show = nullptr;
 	this->on_hide = nullptr;
@@ -59,11 +59,11 @@ void debug_menu::go_back()
 }
 
 
-void debug_menu::change_entry_list(debug_menu_entry_list* list)
+void debug_menu::change_entry_list(std::shared_ptr<debug_menu_entry_list> list)
 {
 	if (this->m_current_entry_list != list)
 	{
-		debug_menu_entry_list* const current_list = this->m_current_entry_list;
+		std::shared_ptr<debug_menu_entry_list> const current_list = this->m_current_entry_list;
 		this->m_current_entry_list = list;
 		this->m_current_entry_list->previous = current_list;
 		int w, h;
@@ -112,17 +112,17 @@ float debug_menu::get_up_scroll_indicator_pos_y() const
 	return this->m_window_pos_y + static_cast<float>(this->m_default_height);
 }
 
-debug_menu_entry* debug_menu::get_selected_entry() const
+std::shared_ptr<debug_menu_entry> debug_menu::get_selected_entry() const
 {
 	return this->m_current_entry_list->get_selected();
 }
 
-debug_menu_entry* debug_menu::get_last_entry() const
+std::shared_ptr<debug_menu_entry> debug_menu::get_last_entry() const
 {
 	return this->m_current_entry_list->last();
 }
 
-debug_menu_entry* debug_menu::add_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
+std::shared_ptr<debug_menu_entry> debug_menu::add_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
 {
 	return this->m_default_entry_list->add_entry(this, type, text, value_or_callback_ptr, callback_arg);
 }
@@ -170,7 +170,7 @@ void debug_menu::reset_current_callback()
 
 void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
 {
-	debug_menu_entry* const current_entry = this->m_current_entry_list->entry_at(parameters.current_entry_index);
+	std::shared_ptr<debug_menu_entry> const current_entry = this->m_current_entry_list->entry_at(parameters.current_entry_index);
 	nglColor_t current_text_color = RGBA_TO_INT(255, 255, 255, 255);
 	current_entry->pos_y = parameters.current_entry_pos_y;
 	const bool is_selected = (parameters.current_entry_index == this->m_current_entry_list->selected_entry_index);
@@ -203,7 +203,7 @@ void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
 	{
 		if (!current_entry->sublist->empty())
 		{
-			const debug_menu_entry* selection = current_entry->sublist->get_selected();
+			const std::shared_ptr<debug_menu_entry> selection = current_entry->sublist->get_selected();
 			if (selection->type == E_NGLMENU_ENTRY_TYPE::SELECT_OPTION)
 			{
 				sprintf(parameters.current_entry_display_text, "%s: %s", current_entry->text, selection->text);
@@ -256,7 +256,7 @@ void debug_menu::draw_entry(debug_menu_draw_entry_parameters& parameters)
 void debug_menu::adjust_height()
 {
 	const float entry_max_pos_y = this->get_max_pos_y_for_entries();
-	const debug_menu_entry* const last_entry = this->get_last_entry();
+	const std::shared_ptr<debug_menu_entry> last_entry = this->get_last_entry();
 	const bool overflow = last_entry->pos_y > entry_max_pos_y;
 	if (!overflow)
 	{
@@ -360,7 +360,7 @@ void debug_menu::handle_input()
 	if (!this->m_is_open)
 		return;
 
-	const debug_menu_entry* const selected_entry = this->get_selected_entry();
+	const std::shared_ptr<debug_menu_entry> selected_entry = this->get_selected_entry();
 	const size_t last_entry_index = this->m_current_entry_list->size() - 1;
 
 	const bool up = input_mgr::is_key_pressed_once(VK_W)
@@ -498,7 +498,7 @@ void debug_menu::handle_input()
 				}
 				if (selected_entry->sublist->selected_entry_index != prevIndex)
 				{
-					const debug_menu_entry* selection = selected_entry->sublist->get_selected();
+					const std::shared_ptr<debug_menu_entry> selection = selected_entry->sublist->get_selected();
 					this->m_current_callback.callback_ptr = selection->handle_ptr;
 					this->m_current_callback.callback_arg = selection->callback_arg;
 				}
@@ -540,7 +540,7 @@ void debug_menu::handle_input()
 				}
 				if (selected_entry->sublist->selected_entry_index != prevIndex)
 				{
-					debug_menu_entry* const selection = selected_entry->sublist->get_selected();
+					std::shared_ptr<debug_menu_entry> const selection = selected_entry->sublist->get_selected();
 					this->m_current_callback.callback_ptr = selection->handle_ptr;
 					this->m_current_callback.callback_arg = selection->callback_arg;
 				}
@@ -554,52 +554,52 @@ void debug_menu::handle_input()
 	}
 }
 
-debug_menu_entry* debug_menu_entry::add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
+std::shared_ptr<debug_menu_entry> debug_menu_entry::add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
 {
 	return this->sublist->add_entry(this->parent, type, text, value_or_callback_ptr, callback_arg);
 }
 
 debug_menu_entry_list::debug_menu_entry_list(const char* menu_title)
 {
-	this->entries = std::vector<debug_menu_entry*>();
+	this->entries = std::vector<std::shared_ptr<debug_menu_entry>>();
 	this->menu_title = menu_title;
 	this->previous = nullptr;
 	this->scroll_pos_y = 0.0f;
 	this->selected_entry_index = 0;
 }
 
-debug_menu_entry* debug_menu_entry_list::add_entry(class debug_menu* parent, E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
+std::shared_ptr<debug_menu_entry> debug_menu_entry_list::add_entry(class debug_menu* parent, E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
 {
-	debug_menu_entry* entry = new debug_menu_entry;
+	std::shared_ptr<debug_menu_entry> entry = std::make_shared<debug_menu_entry>();
 	entry->type = type;
 	strncpy(entry->text, text, DEBUG_MENU_ENTRY_MAX_CHAR);
 	entry->value_ptr = value_or_callback_ptr;
 	entry->callback_arg = callback_arg;
 	nglGetTextSize(text, &entry->text_width, &entry->text_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 	entry->parent = parent;
-	entry->sublist = new debug_menu_entry_list(nullptr);
+	entry->sublist = std::make_shared<debug_menu_entry_list>(nullptr);
 	this->entries.push_back(entry);
 	return entry;
 }
 
-debug_menu_entry* debug_menu_entry_list::first() const
+std::shared_ptr<debug_menu_entry> debug_menu_entry_list::first() const
 {
-	return this->entries[0];
+	return this->entries.at(0);
 }
 
-debug_menu_entry* debug_menu_entry_list::last() const
+std::shared_ptr<debug_menu_entry> debug_menu_entry_list::last() const
 {
-	return this->entries[this->entries.size() - 1];
+	return this->entries.at(this->entries.size() - 1);
 }
 
-debug_menu_entry* debug_menu_entry_list::get_selected() const
+std::shared_ptr<debug_menu_entry> debug_menu_entry_list::get_selected() const
 {
-	return this->entries[this->selected_entry_index];
+	return this->entries.at(this->selected_entry_index);
 }
 
-debug_menu_entry* debug_menu_entry_list::entry_at(const size_t& index) const
+std::shared_ptr<debug_menu_entry> debug_menu_entry_list::entry_at(const size_t& index) const
 {
-	return this->entries[index];
+	return this->entries.at(index);
 }
 
 size_t debug_menu_entry_list::size() const

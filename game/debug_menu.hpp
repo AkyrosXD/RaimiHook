@@ -5,6 +5,7 @@
 #include "xenon_input_mgr.hpp"
 #include "windows_app.hpp"
 #include <vector>
+#include <memory>
 
 #pragma warning (disable: 4996)  /* _CRT_SECURE_NO_WARNINGS */
 
@@ -82,55 +83,55 @@ public:
 	/// <summary>
 	/// The debug menu instance of the entry
 	/// </summary>
-	class debug_menu* parent;
+	class debug_menu* parent = nullptr;
 
 	/// <summary>
 	/// The type of the entry
 	/// </summary>
-	E_NGLMENU_ENTRY_TYPE type;
+	E_NGLMENU_ENTRY_TYPE type = E_NGLMENU_ENTRY_TYPE::TEXT;
 
 	/// <summary>
 	/// The text of the entry
 	/// </summary>
-	char text[DEBUG_MENU_ENTRY_MAX_CHAR];
+	char text[DEBUG_MENU_ENTRY_MAX_CHAR] = { 0 };
 
 	/// <summary>
 	/// If the current entry is a sub-menu, this will be the entries of the sub-menu.
 	/// If the current entry is a multiple-selection entry, this will be the available items to select
 	/// </summary>
-	class debug_menu_entry_list* sublist;
+	class std::shared_ptr<class debug_menu_entry_list> sublist = nullptr;
 
 	/// <summary>
 	/// The height of the text
 	/// </summary>
-	int text_height;
+	int text_height = 0;
 
 	/// <summary>
 	/// The width of the text
 	/// </summary>
-	int text_width;
+	int text_width = 0;
 
 	/// <summary>
 	/// The Y position of the entry
 	/// </summary>
-	float pos_y;
+	float pos_y = 0;
 
 	/// <summary>
 	/// The Y position of where on the screen the entry should be displayed
 	/// </summary>
-	float display_pos_y;
+	float display_pos_y = 0;
 
 	/// <summary>
 	/// If the entry is visible (used for the scrolling functionality)
 	/// </summary>
-	bool is_visible;
+	bool is_visible = 0;
 
 	union
 	{
 		/// <summary>
 		/// Pointer to the current value
 		/// </summary>
-		void* value_ptr;
+		void* value_ptr = nullptr;
 
 		/// <summary>
 		/// Pointer to the callback function
@@ -143,7 +144,7 @@ public:
 		/// <summary>
 		/// Pointer to the function argument
 		/// </summary>
-		void* callback_arg;
+		void* callback_arg = nullptr;
 
 		/// <summary>
 		/// If the entry is a button for a sub-menu, this returns the name of the menu
@@ -159,7 +160,7 @@ public:
 	/// <param name="value_or_handle_ptr">A pointer to the corresponding value or the pointer of the callback function</param>
 	/// <param name="callback_arg">A pointer to the argument of the callback. Set this to NULL if this parameter is not needed</param>
 	/// <returns>A pointer to the added entry</returns>
-	debug_menu_entry* add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
+	std::shared_ptr<debug_menu_entry> add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
 };
 
 class debug_menu_entry_list
@@ -168,12 +169,12 @@ public:
 	/// <summary>
 	/// Current list of entries
 	/// </summary>
-	std::vector<debug_menu_entry*> entries;
+	std::vector< std::shared_ptr<debug_menu_entry>> entries;
 
 	/// <summary>
 	/// Previous list
 	/// </summary>
-	debug_menu_entry_list* previous;
+	std::shared_ptr<debug_menu_entry_list> previous;
 
 	/// <summary>
 	/// The index in the list of the selected entry
@@ -204,32 +205,32 @@ public:
 	/// <param name="value_or_handle_ptr">A pointer to the corresponding value or the pointer of the callback function</param>
 	/// <param name="callback_arg">A pointer to the argument of the callback. Set this to NULL if this parameter is not needed</param>
 	/// <returns>A pointer to the added entry</returns>
-	debug_menu_entry* add_entry(class debug_menu* parent, E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
+	std::shared_ptr<debug_menu_entry> add_entry(class debug_menu* parent, E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
 
 	/// <summary>
 	/// Gets the first entry
 	/// </summary>
 	/// <returns>A pointer of the first entry</returns>
-	debug_menu_entry* first() const;
+	std::shared_ptr<debug_menu_entry> first() const;
 
 	/// <summary>
 	/// Gets the last entry
 	/// </summary>
 	/// <returns>A pointer of the last entry</returns>
-	debug_menu_entry* last() const;
+	std::shared_ptr<debug_menu_entry> last() const;
 
 	/// <summary>
 	/// Gets the selected entry
 	/// </summary>
 	/// <returns>A pointer of the selected entry</returns>
-	debug_menu_entry* get_selected() const;
+	std::shared_ptr<debug_menu_entry> get_selected() const;
 
 	/// <summary>
 	/// Gets the entry at the given index
 	/// </summary>
 	/// <param name="index">The index of the entry</param>
 	/// <returns>A pointer of the entry</returns>
-	debug_menu_entry* entry_at(const size_t& index) const;
+	std::shared_ptr<debug_menu_entry> entry_at(const size_t& index) const;
 
 	/// <summary>
 	/// Gets the size of the list
@@ -247,7 +248,7 @@ public:
 struct debug_menu_draw_entry_parameters
 {
 	size_t current_entry_index;
-	const debug_menu_entry* last_entry;
+	const std::shared_ptr<debug_menu_entry> last_entry;
 	float y_start;
 	float current_entry_pos_y;
 	float entry_max_pos_y;
@@ -274,13 +275,13 @@ private:
 	int m_up_arrow_width;
 	int m_up_arrow_height;
 	nglWindow m_ngl_box_data;
-	debug_menu_entry_list* m_default_entry_list;
-	debug_menu_entry_list* m_current_entry_list;
+	std::shared_ptr<debug_menu_entry_list> m_default_entry_list;
+	std::shared_ptr<debug_menu_entry_list> m_current_entry_list;
 	debug_menu_entry_callback m_current_callback;
 	bool get_on_hide();
 	bool get_on_show();
 	void go_back();
-	void change_entry_list(debug_menu_entry_list* list);
+	void change_entry_list(std::shared_ptr<debug_menu_entry_list> list);
 	float get_menu_max_height() const;
 	float get_max_pos_y_for_entries() const;
 	float get_min_pos_y_for_entries() const;
@@ -288,8 +289,8 @@ private:
 	bool can_scoll_up() const;
 	float get_down_scroll_indicator_pos_y() const;
 	float get_up_scroll_indicator_pos_y() const;
-	debug_menu_entry* get_selected_entry() const;
-	debug_menu_entry* get_last_entry() const;
+	std::shared_ptr<debug_menu_entry> get_selected_entry() const;
+	std::shared_ptr<debug_menu_entry> get_last_entry() const;
 	void draw_entry(debug_menu_draw_entry_parameters& parameters);
 	void adjust_height();
 	void draw_scroll_indicators();
@@ -339,7 +340,7 @@ public:
 	/// <param name="value_or_handle_ptr">A pointer to the corresponding value or the pointer of the callback function</param>
 	/// <param name="callback_arg">A pointer to the argument of the callback. Set this to NULL if this parameter is not needed</param>
 	/// <returns>A pointer to the added entry</returns>
-	debug_menu_entry* add_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
+	std::shared_ptr<debug_menu_entry> add_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
 
 	/// <summary>
 	/// Executes the current callback of the menu

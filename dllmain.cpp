@@ -32,19 +32,19 @@
 #define DEBUG_MENU_PAUSE_TYPE 5
 
 static std::shared_ptr<debug_menu> s_DebugMenu;
-static debug_menu_entry* s_GameTimeSelect;
-static debug_menu_entry* s_GlassHouseLevelSelect;
-static debug_menu_entry* s_WarpButton;
-static debug_menu_entry* s_CameraModeSelect;
-static debug_menu_entry* s_FovSlider;
-static debug_menu_entry* s_XInputStatusLabel;
-static debug_menu_entry* s_MovementSpeedSelect;
-static debug_menu_entry* s_CurrentTimerMinutesSelect;
-static debug_menu_entry* s_CurrentTimerSecondsSelect;
-static debug_menu_entry* s_CurrentTimerRSelect;
-static debug_menu_entry* s_CurrentTimerGSelect;
-static debug_menu_entry* s_CurrentTimerBSelect;
-static debug_menu_entry* s_HeroPositionLabel;
+static std::shared_ptr<debug_menu_entry> s_GameTimeSelect;
+static std::shared_ptr<debug_menu_entry> s_GlassHouseLevelSelect;
+static std::shared_ptr<debug_menu_entry> s_WarpButton;
+static std::shared_ptr<debug_menu_entry> s_CameraModeSelect;
+static std::shared_ptr<debug_menu_entry> s_FovSlider;
+static std::shared_ptr<debug_menu_entry> s_XInputStatusLabel;
+static std::shared_ptr<debug_menu_entry> s_MovementSpeedSelect;
+static std::shared_ptr<debug_menu_entry> s_CurrentTimerMinutesSelect;
+static std::shared_ptr<debug_menu_entry> s_CurrentTimerSecondsSelect;
+static std::shared_ptr<debug_menu_entry> s_CurrentTimerRSelect;
+static std::shared_ptr<debug_menu_entry> s_CurrentTimerGSelect;
+static std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect;
+static std::shared_ptr<debug_menu_entry> s_HeroPositionLabel;
 
 static string_hash s_HeroStringHash;
 
@@ -889,8 +889,8 @@ static MenuRegionStrip s_RegionStrips[] =
 
 struct MenuRegionInfo
 {
-	debug_menu_entry* region_entry;
-	debug_menu_entry* region_entry_parent;
+	std::shared_ptr<debug_menu_entry> region_entry;
+	std::shared_ptr<debug_menu_entry> region_entry_parent;
 };
 
 static std::map<region*, MenuRegionInfo> s_MenuRegions;
@@ -911,7 +911,7 @@ void LoadInterior(region* target)
 			pos.y = target->pos_2.y;
 		}
 
-		const debug_menu_entry_list* const list = s_MenuRegions[target].region_entry_parent->sublist;
+		const std::shared_ptr<debug_menu_entry_list> list = s_MenuRegions.at(target).region_entry_parent->sublist;
 		for (size_t i = 0; i < list->size(); i++)
 		{
 			region* const currentRegion = reinterpret_cast<region*>(list->entry_at(i)->callback_arg);
@@ -1163,9 +1163,9 @@ void UpdateWarpEntry()
 		for (size_t i = 0; i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
 		{
 			MenuRegionStrip* rs = s_RegionStrips + i;
-			char* fullName = new char[64];
-			sprintf(fullName, "MEGACITY_STRIP_%s", rs->name);
-			debug_menu_entry* stripItem = s_WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName, nullptr, nullptr);
+			const std::unique_ptr<char> fullName = std::unique_ptr<char>(new char[64]);
+			sprintf(fullName.get(), "MEGACITY_STRIP_%s", rs->name);
+			const std::shared_ptr<debug_menu_entry> stripItem = s_WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName.get(), nullptr, nullptr);
 			rs->name_length = strlen(rs->name);
 
 			if (regions != nullptr)
@@ -1177,21 +1177,21 @@ void UpdateWarpEntry()
 					{
 						if (s_MenuRegions.find(currentRegion) == s_MenuRegions.end())
 						{
-							debug_menu_entry* regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
+							const std::shared_ptr<debug_menu_entry> regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
 							MenuRegionInfo mri{ regionItem, stripItem };
 							s_MenuRegions.insert(std::pair<region*, MenuRegionInfo>(currentRegion, mri));
 						}
 						else
 						{
 							MenuRegionInfo* mri = &s_MenuRegions[currentRegion];
-							std::vector<debug_menu_entry*>* items = &mri->region_entry_parent->sublist->entries;
-							std::vector<debug_menu_entry*>::iterator found = std::find(items->begin(), items->end(), mri->region_entry);
+							std::vector<std::shared_ptr<debug_menu_entry>>* items = &mri->region_entry_parent->sublist->entries;
+							const std::vector<std::shared_ptr<debug_menu_entry>>::iterator found = std::find(items->begin(), items->end(), mri->region_entry);
 							if (found != items->end())
 							{
 								items->erase(found);
 							}
 
-							debug_menu_entry* regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
+							const std::shared_ptr<debug_menu_entry> regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
 							mri->region_entry = regionItem;
 							mri->region_entry_parent = stripItem;
 						}
@@ -1199,7 +1199,7 @@ void UpdateWarpEntry()
 				}
 			}
 
-			std::sort(stripItem->sublist->entries.begin(), stripItem->sublist->entries.end(), [](const debug_menu_entry* lhs, const debug_menu_entry* rhs)
+			std::sort(stripItem->sublist->entries.begin(), stripItem->sublist->entries.end(), [](const std::shared_ptr<debug_menu_entry> lhs, const std::shared_ptr<debug_menu_entry> rhs)
 			{
 				const char* lhsText = lhs->text;
 				const char* rhsText = rhs->text;
@@ -1282,7 +1282,7 @@ void InitializeDebugMenu()
 
 void CrateGlobaEntry()
 {
-	debug_menu_entry* globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &bUnlockFPS, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Perf Info", &bShowStats, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &bDisableInterface, nullptr);
@@ -1291,19 +1291,19 @@ void CrateGlobaEntry()
 
 void CreateHeroEntry()
 {
-	debug_menu_entry* heroMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Hero", nullptr, nullptr);
-	debug_menu_entry* changeHeroMenu = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Change Hero", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> heroMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Hero", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> changeHeroMenu = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Change Hero", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_Heroes) / sizeof(const char*); i++)
 	{
 		const char* hero = s_Heroes[i];
 		changeHeroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, hero, &ChangeHero, const_cast<void*>(static_cast<const void*>(hero)));
 	}
-	debug_menu_entry* spawnPointsMenu = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Spawn Points", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> spawnPointsMenu = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Spawn Points", nullptr, nullptr);
 	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Nearest Spawn Point", &SpawnToNearestSpawnPoint, nullptr);
 	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default Spawn Point", &SpawnToPoint, reinterpret_cast<void*>(1));
 	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 	{
-		std::unique_ptr<char> idxBuffer = std::unique_ptr<char>(new char[20]);
+		const std::unique_ptr<char> idxBuffer = std::unique_ptr<char>(new char[20]);
 		sprintf(idxBuffer.get(), "Spawn Point %02d", static_cast<int>(i));
 		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer.get(), &SpawnToPoint, reinterpret_cast<void*>(i));
 	}
@@ -1315,10 +1315,10 @@ void CreateHeroEntry()
 	s_MovementSpeedSelect = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Spidey Movement Speed", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_MovementSpeeds) / sizeof(float); i++)
 	{
-		char* speedBuffer = new char[16];
+		const std::unique_ptr<char> speedBuffer = std::unique_ptr<char>(new char[16]);
 		float speed = s_MovementSpeeds[i];
-		itoa(static_cast<int>(speed), speedBuffer, 10);
-		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer, nullptr, nullptr);
+		itoa(static_cast<int>(speed), speedBuffer.get(), 10);
+		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer.get(), nullptr, nullptr);
 	}
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Full Health", &FullHealth, nullptr);
@@ -1328,7 +1328,7 @@ void CreateHeroEntry()
 
 void CreateWorldEntry()
 {
-	debug_menu_entry* const worldMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "World", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> const worldMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "World", nullptr, nullptr);
 	s_GameTimeSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Game Time", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_WorldTimes) / sizeof(const char*); i++)
 	{
@@ -1339,29 +1339,29 @@ void CreateWorldEntry()
 	for (size_t i = 0; i < sizeof(s_GlassHouseLevels) / sizeof(int); i++)
 	{
 		const int& level = s_GlassHouseLevels[i];
-		char* levelNumBuffer = new char[2];
-		itoa(level, levelNumBuffer, 10);
-		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer, &slf::set_glass_house_level, reinterpret_cast<void*>(level));
+		const std::unique_ptr<char> levelNumBuffer = std::unique_ptr<char>(new char[2]);
+		itoa(level, levelNumBuffer.get(), 10);
+		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer.get(), &slf::set_glass_house_level, reinterpret_cast<void*>(level));
 	}
 	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &bDisableTraffic, nullptr);
 }
 
 void CreatePedestriansEntry()
 {
-	debug_menu_entry* const pedsMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Pedestrians", nullptr, nullptr);
+	const const std::shared_ptr<debug_menu_entry> pedsMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Pedestrians", nullptr, nullptr);
 	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Pedestrians", &bDisablePedestrians, nullptr);
 	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport All To Me", &TeleportAllPedestriansToMe, nullptr);
 }
 
 void CreateCameraEntry()
 {
-	debug_menu_entry* const cameraMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Camera", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> const cameraMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Camera", nullptr, nullptr);
 	s_FovSlider = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "FOV", nullptr, nullptr);
 	for (int i = SM3_CAMERA_MIN_FOV; i < SM3_CAMERA_MAX_FOV + 1; i++)
 	{
-		char* fovBuffer = new char[3];
-		itoa(i, fovBuffer, 10);
-		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer, nullptr, nullptr);
+		const std::unique_ptr<char> fovBuffer = std::unique_ptr<char>(new char[3]);
+		itoa(i, fovBuffer.get(), 10);
+		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer.get(), nullptr, nullptr);
 	}
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
@@ -1376,17 +1376,17 @@ void CreateCameraEntry()
 
 void CreateMissionManagerEntry()
 {
-	debug_menu_entry* const missionManagerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Mission Manager", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> missionManagerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Mission Manager", nullptr, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Abort Mission", &AbortCurrentMission, nullptr);
-	debug_menu_entry* const loadMissionMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Mission", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> const loadMissionMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Mission", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(RHMissionScript); i++)
 	{
 		RHMissionScript* mission = s_MissionsScripts + i;
 		if (!mission->checkpoints_scripts.empty())
 		{
-			debug_menu_entry* const selectedMissionMenu = loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, mission->instance_name, nullptr, nullptr);
+			const std::shared_ptr<debug_menu_entry> selectedMissionMenu = loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, mission->instance_name, nullptr, nullptr);
 			for (RHCheckpointScript& checkpointScript : mission->checkpoints_scripts)
 			{
 				if (checkpointScript.display_name != nullptr)
@@ -1395,11 +1395,11 @@ void CreateMissionManagerEntry()
 				}
 				else
 				{
-					char* checkpoint_name = new char[strlen(checkpointScript.instance_name) + 3];
-					sprintf(checkpoint_name, "%s_%02d", checkpointScript.instance_name, static_cast<int>(checkpointScript.selected_checkpoint));
-					checkpointScript.display_name = checkpoint_name;
+					const std::unique_ptr<char> checkpoint_name = std::unique_ptr<char>(new char[strlen(checkpointScript.instance_name) + 3]);
+					sprintf(checkpoint_name.get(), "%s_%02d", checkpointScript.instance_name, static_cast<int>(checkpointScript.selected_checkpoint));
+					checkpointScript.display_name = checkpoint_name.get();
 
-					selectedMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, checkpoint_name, &LoadMissionScript, &checkpointScript);
+					selectedMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, checkpoint_name.get(), &LoadMissionScript, &checkpointScript);
 				}
 			}
 		}
@@ -1408,7 +1408,7 @@ void CreateMissionManagerEntry()
 			loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, mission->instance_name, &LoadMissionScript, mission);
 		}
 	}
-	debug_menu_entry* cutscenesMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Cutscene", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> cutscenesMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Cutscene", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
 	{
 		const char* cutscene = s_Cutscenes[i];
@@ -1418,39 +1418,39 @@ void CreateMissionManagerEntry()
 
 void CreateTimerEntry()
 {
-	debug_menu_entry* const timerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Timer", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> const timerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Timer", nullptr, nullptr);
 	timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Show Timer", &ShowTimer, nullptr);
 	timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Hide Timer", &HideTimer, nullptr);
 	s_CurrentTimerMinutesSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Minutes", nullptr, nullptr);
 	for (size_t i = 0; i < 60; i++)
 	{
-		char* mins_buffer = new char[2];
-		itoa(i, mins_buffer, 10);
-		s_CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mins_buffer, &SetTimerTime, nullptr);
+		const std::unique_ptr<char> mins_buffer = std::unique_ptr<char>(new char[2]);
+		itoa(i, mins_buffer.get(), 10);
+		s_CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mins_buffer.get(), &SetTimerTime, nullptr);
 	}
 	s_CurrentTimerSecondsSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Seconds", nullptr, nullptr);
 	for (size_t i = 0; i < 60; i++)
 	{
-		char* secs_buffer = new char[2];
-		itoa(i, secs_buffer, 10);
-		s_CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, secs_buffer, &SetTimerTime, nullptr);
+		const std::unique_ptr<char> secs_buffer = std::unique_ptr<char>(new char[2]);
+		itoa(i, secs_buffer.get(), 10);
+		s_CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, secs_buffer.get(), &SetTimerTime, nullptr);
 	}
 	s_CurrentTimerRSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "R", nullptr, nullptr);
 	s_CurrentTimerGSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "G", nullptr, nullptr);
 	s_CurrentTimerBSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "B", nullptr, nullptr);
 	for (size_t i = 0; i <= 255; i++)
 	{
-		char* color_buffer = new char[4];
-		itoa(i, color_buffer, 10);
-		s_CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
-		s_CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
-		s_CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer, &SetTimerColor, nullptr);
+		const std::unique_ptr<char> color_buffer = std::unique_ptr<char>(new char[4]);
+		itoa(i, color_buffer.get(), 10);
+		s_CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
+		s_CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
+		s_CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
 	}
 }
 
 void CreateEntitiesEntry()
 {
-	debug_menu_entry* const entitiesMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Entities", nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> const entitiesMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Entities", nullptr, nullptr);
 	entitiesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Kill All", &KillAllEntities, nullptr);
 	entitiesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport All To Me", &TeleportAllEntitiesToMe, nullptr);
 	entitiesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport To Nearest", &TeleportToNearestEntity, nullptr);
