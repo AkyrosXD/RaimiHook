@@ -60,6 +60,7 @@ static bool bDisableInterface = false;
 static bool bBlacksuitRage = false;
 static bool bInfiniteCombo = false;
 static bool bInstantKill = false;
+static bool bAlternativeCutsceneAngles = false;
 
 enum class E_RH_MISSION_SCRIPT_TYPE
 {
@@ -1362,6 +1363,7 @@ void CreateCameraEntry()
 	}
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Alternative Angles in Cutscenes", &bAlternativeCutsceneAngles, nullptr);
 	s_CameraModeSelect = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Camera Mode", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_CameraModes) / sizeof(const char*); i++)
 	{
@@ -1636,11 +1638,27 @@ struct IGOFrontEnd_hooks : IGOFrontEnd
 
 IGOFrontEnd_hooks::IGOFrontEnd__Draw_t IGOFrontEnd_hooks::original_IGOFrontEnd__Draw;
 
+static const uintptr_t LOAD_SCENE_ANIMATION_ADDRESS = 0x869060;
+typedef void(*load_scene_animation_t)(DWORD, DWORD, DWORD, void*);
+load_scene_animation_t original_load_scene_animation;
+
+void load_scene_animation_hook(DWORD a1, DWORD a2, DWORD a3, void* a4)
+{
+	const char* const entity_name = reinterpret_cast<const char*>(a2 + 4);
+
+	if (bAlternativeCutsceneAngles && strcmp(entity_name, "camera") == 0)
+	{
+		return;
+	}
+
+	return original_load_scene_animation(a1, a2, a3, a4);
+}
+
 #ifdef _DEBUG
 void AllocDebugConsole()
 {
 	AllocConsole();
-	(void)(freopen("CONOUT$", "w", stdout));
+	static_cast<void>(freopen("CONOUT$", "w", stdout));
 }
 #endif // _DEBUG
 
@@ -1651,24 +1669,25 @@ void StartThread(HANDLE mainThread)
 #endif // _DEBUG
 	DetourTransactionBegin();
 
-	original_nglPresent = (nglPresent_t)NGL_PRESENT_ADDRESS;
-	DetourAttach(&(PVOID&)original_nglPresent, nglPresent_Hook);
+	original_nglPresent = reinterpret_cast<nglPresent_t>(NGL_PRESENT_ADDRESS);
+	DetourAttach(&reinterpret_cast<PVOID&>(original_nglPresent), nglPresent_Hook);
 
-	//note: keep an eye on 7A4430 for loading cutscenes. possible feature in the future...
+	app_hooks::original_app__on_update = reinterpret_cast<app_hooks::app__on_update_t>(app_hooks::ON_UPDATE_ADDRESS);
+	DetourAttach(&reinterpret_cast<PVOID&>(app_hooks::original_app__on_update), app_hooks::on_update);
 
-	app_hooks::original_app__on_update = (app_hooks::app__on_update_t)(app_hooks::ON_UPDATE_ADDRESS);
-	DetourAttach(&(PVOID&)app_hooks::original_app__on_update, app_hooks::on_update);
+	mission_manager_hooks::original_mission_manager__on_district_unloaded = reinterpret_cast<mission_manager_hooks::mission_manager__on_district_unloaded_t>(mission_manager_hooks::ON_DISTRICT_UNLOADED_ADDRESS);
+	const auto& ptrDistrictUnloadedHook = &mission_manager_hooks::on_district_unloaded;
+	DetourAttach(&reinterpret_cast<PVOID&>(mission_manager_hooks::original_mission_manager__on_district_unloaded), reinterpret_cast<const PVOID&>(ptrDistrictUnloadedHook));
 
-	mission_manager_hooks::original_mission_manager__on_district_unloaded = (mission_manager_hooks::mission_manager__on_district_unloaded_t)mission_manager_hooks::ON_DISTRICT_UNLOADED_ADDRESS;
-	const auto& on_district_unloaded_hook_ptr = &mission_manager_hooks::on_district_unloaded;
-	DetourAttach(&(PVOID&)mission_manager_hooks::original_mission_manager__on_district_unloaded, *(void**)&on_district_unloaded_hook_ptr);
+	plr_loco_standing_state_hooks::original_plr_loco_standing_state__update = reinterpret_cast<plr_loco_standing_state_hooks::plr_loco_standing_state__update_t>(plr_loco_standing_state_hooks::UPDATE_ADDRESS);
+	DetourAttach(&reinterpret_cast<PVOID&>(plr_loco_standing_state_hooks::original_plr_loco_standing_state__update), &plr_loco_standing_state_hooks::update);
 
-	plr_loco_standing_state_hooks::original_plr_loco_standing_state__update = (plr_loco_standing_state_hooks::plr_loco_standing_state__update_t)plr_loco_standing_state_hooks::UPDATE_ADDRESS;
-	DetourAttach(&(PVOID&)plr_loco_standing_state_hooks::original_plr_loco_standing_state__update, &plr_loco_standing_state_hooks::update);
-
-	IGOFrontEnd_hooks::original_IGOFrontEnd__Draw = (IGOFrontEnd_hooks::IGOFrontEnd__Draw_t)IGOFrontEnd_hooks::DRAW_ADDRESS;
+	IGOFrontEnd_hooks::original_IGOFrontEnd__Draw = reinterpret_cast<IGOFrontEnd_hooks::IGOFrontEnd__Draw_t>(IGOFrontEnd_hooks::DRAW_ADDRESS);
 	auto ptrDrawHook = &IGOFrontEnd_hooks::Draw;
-	DetourAttach(&(PVOID&)IGOFrontEnd_hooks::original_IGOFrontEnd__Draw, *(void**)&ptrDrawHook);
+	DetourAttach(&(PVOID&)IGOFrontEnd_hooks::original_IGOFrontEnd__Draw, reinterpret_cast<const PVOID&>(ptrDrawHook));
+
+	original_load_scene_animation = reinterpret_cast<load_scene_animation_t>(LOAD_SCENE_ANIMATION_ADDRESS);
+	DetourAttach(&reinterpret_cast<PVOID&>(original_load_scene_animation), &load_scene_animation_hook);
 
 	DetourTransactionCommit();
 }
@@ -1678,7 +1697,7 @@ bool IsGameCompatible()
 	MODULEINFO info;
 	HMODULE const base = GetModuleHandleA(0);
 	GetModuleInformation(GetCurrentProcess(), base, &info, sizeof(MODULEINFO));
-	return (uintptr_t)info.EntryPoint == 0x9CEBE8;
+	return reinterpret_cast<uintptr_t>(info.EntryPoint) == 0x9CEBE8;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -1691,11 +1710,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 			MessageBoxA(0, "d3d9.dll proxy error", "RaimiHook", MB_OK);
 			return false;
 		}
+
 		if (!IsGameCompatible())
 		{
 			MessageBoxA(0, "This version of the game is not compatible. Please try a different one.", "RaimiHook", MB_OK);
 			return false;
 		}
+
 		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartThread, 0, 0, 0);
 		break;
 	}

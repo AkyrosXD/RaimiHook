@@ -4,9 +4,19 @@
 
 typedef unsigned char region_flag_t;
 
+/// <summary>
+/// Region flags
+/// </summary>
 enum class E_REGION_FLAGS : region_flag_t
 {
+	/// <summary>
+	/// Region is not loaded
+	/// </summary>
 	E_UNLOADED = 0,
+
+	/// <summary>
+	/// Region is loaded
+	/// </summary>
 	E_LOADED = 0xFE
 };
 

@@ -83,12 +83,12 @@ struct game_clock
 /// <summary>
 /// Static instance of the Front-End Manager
 /// </summary>
-static const FEManager* const g_femanager = (const FEManager*)0xE87950;
+static const FEManager* const g_femanager = reinterpret_cast<const FEManager*>(0xE87950);
 
 /// <summary>
 /// 
 /// </summary>
-static const char** const global_game_entities = (const char**)0xD13938;
+static const char** const global_game_entities = reinterpret_cast<const char**>(0xD13938);
 
 /// <summary>
 /// 
