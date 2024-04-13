@@ -13,12 +13,12 @@ debug_menu::debug_menu(const char* title, float x, float y)
 	nglConstructWindow(&this->m_ngl_box_data);
 	int default_width, default_height;
 	nglGetTextSize(title, &default_width, &default_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	this->m_default_width = (float)default_width + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
-	this->m_default_height = (float)default_height + DEBUG_MENU_TITLE_TOP_PADDING + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	this->m_default_width = static_cast<float>(default_width) + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
+	this->m_default_height = static_cast<float>(default_height) + DEBUG_MENU_TITLE_TOP_PADDING + DEBUG_MENU_ENTRY_BOTTOM_PADDING;
 	nglGetTextSize(DEBUG_MENU_DOWN_ARROW, &this->m_down_arrow_width, &this->m_down_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
 	nglGetTextSize(DEBUG_MENU_UP_ARROW, &this->m_up_arrow_width, &this->m_up_arrow_height, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-	this->m_width = (float)this->m_default_width;
-	this->m_height = (float)this->m_default_height;
+	this->m_width = static_cast<float>(this->m_default_width);
+	this->m_height = static_cast<float>(this->m_default_height);
 	nglSetWindowColor(&this->m_ngl_box_data, 0xC0000000);
 	this->m_current_callback = { nullptr, nullptr };
 }
@@ -50,7 +50,7 @@ void debug_menu::go_back()
 	if (this->m_current_entry_list->previous != nullptr)
 	{
 		this->m_current_entry_list = this->m_current_entry_list->previous;
-		this->m_width = (float)this->m_default_width;
+		this->m_width = static_cast<float>(this->m_default_width);
 	}
 	else
 	{
@@ -68,7 +68,7 @@ void debug_menu::change_entry_list(debug_menu_entry_list* list)
 		this->m_current_entry_list->previous = current_list;
 		int w, h;
 		nglGetTextSize(list->menu_title, &w, &h, DEBUG_MENU_FONT_SCALE, DEBUG_MENU_FONT_SCALE);
-		this->m_default_width = (float)w + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
+		this->m_default_width = static_cast<float>(w) + DEBUG_MENU_ENTRY_LEFT_PADDING + DEBUG_MENU_ENTRY_RIGHT_PADDING;
 	}
 }
 
@@ -79,7 +79,7 @@ float debug_menu::get_menu_max_height() const
 
 float debug_menu::get_max_pos_y_for_entries() const
 {
-	return this->get_menu_max_height() - DEBUG_MENU_ENTRY_BOTTOM_PADDING - DEBUG_MENU_TITLE_TOP_PADDING - (float)this->m_down_arrow_height - DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	return this->get_menu_max_height() - DEBUG_MENU_ENTRY_BOTTOM_PADDING - DEBUG_MENU_TITLE_TOP_PADDING - static_cast<float>(this->m_down_arrow_height) - DEBUG_MENU_ENTRY_BOTTOM_PADDING;
 }
 
 float debug_menu::get_min_pos_y_for_entries() const
@@ -87,7 +87,7 @@ float debug_menu::get_min_pos_y_for_entries() const
 	float result = this->get_up_scroll_indicator_pos_y();
 	if (this->can_scoll_up())
 	{
-		result += ((float)this->m_up_arrow_height + DEBUG_MENU_ENTRY_BOTTOM_PADDING);
+		result += (static_cast<float>(this->m_up_arrow_height) + DEBUG_MENU_ENTRY_BOTTOM_PADDING);
 	}
 	return result;
 }
@@ -104,12 +104,12 @@ bool debug_menu::can_scoll_up() const
 
 float debug_menu::get_down_scroll_indicator_pos_y() const
 {
-	return this->get_menu_max_height() - (float)this->m_down_arrow_height - DEBUG_MENU_ENTRY_BOTTOM_PADDING;
+	return this->get_menu_max_height() - static_cast<float>(this->m_down_arrow_height) - DEBUG_MENU_ENTRY_BOTTOM_PADDING;
 }
 
 float debug_menu::get_up_scroll_indicator_pos_y() const
 {
-	return this->m_window_pos_y + (float)this->m_default_height;
+	return this->m_window_pos_y + static_cast<float>(this->m_default_height);
 }
 
 debug_menu_entry* debug_menu::get_selected_entry() const

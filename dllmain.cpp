@@ -598,7 +598,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 					.spawn_position(vector3d({ 2835.128f, 106, -99.330f })),
 
 				RHCheckpointScript(4)
-					.custom_display_name("STORY_INSTANCE_MOVIE_1_04_NO_SCRIPT")
+					.custom_display_name("STORY_INSTANCE_MOVIE_4_04 (NO SCRIPT)")
 			})
 	},
 	{
@@ -687,11 +687,11 @@ static const char* const s_CameraModes[] =
 void ChangeHero(const char* hero)
 {
 	// this is needed to unlock the races
-	*game_vars::inst()->get_var<float>("gv_playthrough_as_goblin") = (float)(int)(strcmp(hero, "ch_playergoblin") == 0);
+	*game_vars::inst()->get_var<float>("gv_playthrough_as_goblin") = static_cast<float>(static_cast<int>((strcmp(hero, "ch_playergoblin") == 0)));
 
 	// this is needed to prevent the costume from changing back to red
 	// when the game respawns the player
-	*game_vars::inst()->get_var<float>("gv_playthrough_as_blacksuit") = (float)(int)(strcmp(hero, "ch_blacksuit") == 0);
+	*game_vars::inst()->get_var<float>("gv_playthrough_as_blacksuit") = static_cast<float>(static_cast<int>((strcmp(hero, "ch_blacksuit") == 0)));
 
 	s_HeroStringHash.set_string(hero);
 
@@ -810,7 +810,7 @@ void HideTimer()
 void SetTimerTime()
 {
 	g_femanager->IGO->TimerWidget->SetVisible(true);
-	g_femanager->IGO->TimerWidget->Seconds = (float)((s_CurrentTimerMinutesSelect->sublist->selected_entry_index * 60) + (s_CurrentTimerSecondsSelect->sublist->selected_entry_index));
+	g_femanager->IGO->TimerWidget->Seconds = static_cast<float>(((s_CurrentTimerMinutesSelect->sublist->selected_entry_index * 60) + (s_CurrentTimerSecondsSelect->sublist->selected_entry_index)));
 }
 
 void SetTimerColor()
@@ -1293,16 +1293,16 @@ void CreateHeroEntry()
 	for (size_t i = 0; i < sizeof(s_Heroes) / sizeof(const char*); i++)
 	{
 		const char* hero = s_Heroes[i];
-		changeHeroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, hero, &ChangeHero, (void*)hero);
+		changeHeroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, hero, &ChangeHero, const_cast<void*>(static_cast<const void*>(hero)));
 	}
 	debug_menu_entry* spawnPointsMenu = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Spawn Points", nullptr, nullptr);
 	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Nearest Spawn Point", &SpawnToNearestSpawnPoint, nullptr);
-	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default Spawn Point", &SpawnToPoint, (void*)1);
+	spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default Spawn Point", &SpawnToPoint, reinterpret_cast<void*>(1));
 	for (size_t i = 0; i < SM3_SPAWN_PONTS_COUNT; i++)
 	{
 		std::unique_ptr<char> idxBuffer = std::unique_ptr<char>(new char[20]);
-		sprintf(idxBuffer.get(), "Spawn Point %02d", (int)i);
-		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer.get(), &SpawnToPoint, (void*)i);
+		sprintf(idxBuffer.get(), "Spawn Point %02d", static_cast<int>(i));
+		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer.get(), &SpawnToPoint, reinterpret_cast<void*>(i));
 	}
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "God Mode", &bGodMode, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Spidey Infinite Combo Meter", &bInfiniteCombo, nullptr);
@@ -1314,7 +1314,7 @@ void CreateHeroEntry()
 	{
 		char* speedBuffer = new char[16];
 		float speed = s_MovementSpeeds[i];
-		itoa((int)speed, speedBuffer, 10);
+		itoa(static_cast<int>(speed), speedBuffer, 10);
 		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer, nullptr, nullptr);
 	}
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades, nullptr);
@@ -1330,7 +1330,7 @@ void CreateWorldEntry()
 	for (size_t i = 0; i < sizeof(s_WorldTimes) / sizeof(const char*); i++)
 	{
 		const char* worldTime = s_WorldTimes[i];
-		s_GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, worldTime, &SetWorldTime, (void*)(DWORD)i);
+		s_GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, worldTime, &SetWorldTime, reinterpret_cast<void*>(static_cast<DWORD>(i)));
 	}
 	s_GlassHouseLevelSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Glass House Level", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_GlassHouseLevels) / sizeof(int); i++)
@@ -1338,7 +1338,7 @@ void CreateWorldEntry()
 		const int& level = s_GlassHouseLevels[i];
 		char* levelNumBuffer = new char[2];
 		itoa(level, levelNumBuffer, 10);
-		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer, &slf::set_glass_house_level, (void*)level);
+		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer, &slf::set_glass_house_level, reinterpret_cast<void*>(level));
 	}
 	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &bDisableTraffic, nullptr);
 }
@@ -1408,7 +1408,7 @@ void CreateMissionManagerEntry()
 	for (size_t i = 0; i < sizeof(s_Cutscenes) / sizeof(const char*); i++)
 	{
 		const char* cutscene = s_Cutscenes[i];
-		cutscenesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, cutscene, &LoadCutscene, (void*)cutscene);
+		cutscenesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, cutscene, &LoadCutscene, const_cast<void*>(static_cast<const void*>(cutscene)));
 	}
 }
 

@@ -79,12 +79,12 @@ void xenon_input_mgr::update_state()
 
 bool xenon_input_mgr::is_button_pressed(const DWORD& button)
 {
-	return ret_and_update_input_type((bool)(m_xinput_current_state.Gamepad.wButtons & button));
+	return ret_and_update_input_type(static_cast<bool>(m_xinput_current_state.Gamepad.wButtons & button));
 }
 
 bool xenon_input_mgr::is_button_pressed_once(const DWORD& button)
 {
-	return ret_and_update_input_type(!(bool)(m_xinput_previous_state.Gamepad.wButtons & button) && (bool)(m_xinput_current_state.Gamepad.wButtons & button));
+	return ret_and_update_input_type(!static_cast<bool>(m_xinput_previous_state.Gamepad.wButtons & button) && static_cast<bool>(m_xinput_current_state.Gamepad.wButtons & button));
 }
 
 bool xenon_input_mgr::is_button_pressed_repeat(const DWORD& button)

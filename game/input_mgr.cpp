@@ -17,7 +17,7 @@ LRESULT CALLBACK WndProc(
 {
 	if (wParam < MAX_KEYS && wParam >= 0)
 	{
-		const int vKey = (int)wParam;
+		const int vKey = static_cast<int>(wParam);
 		const bool repeat = !((HIWORD(lParam) & KF_REPEAT) == 0);
 
 		switch (uMsg)
