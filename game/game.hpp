@@ -43,6 +43,9 @@ public:
 private:
 	char unk3[16];
 public:
+	/// <summary>
+	/// Current pause type
+	/// </summary>
 	int pause_type;
 
 	/// <summary>

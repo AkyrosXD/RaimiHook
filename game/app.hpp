@@ -20,8 +20,18 @@ public:
 	game* game_inst;
 
 	/// <summary>
+	/// Current framerate of the game
+	/// </summary>
+	static float& fps;
+
+	/// <summary>
 	/// The fixed delta time of the game's engine
 	/// </summary>
 	static float& fixed_delta_time;
+
+	/// <summary>
+	/// Gets the current delta time of the game
+	/// </summary>
+	inline static float get_delta_time() { return 1 / app::fps; }
 };
 #pragma pack(pop)

@@ -1,11 +1,13 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+
 #include "ngl.hpp"
 #include "input_mgr.hpp"
 #include "xenon_input_mgr.hpp"
 #include "windows_app.hpp"
-#include <vector>
-#include <memory>
+#include "app.hpp"
 
 #pragma warning (disable: 4996)  /* _CRT_SECURE_NO_WARNINGS */
 
@@ -274,6 +276,7 @@ private:
 	int m_down_arrow_height;
 	int m_up_arrow_width;
 	int m_up_arrow_height;
+	float last_input_type;
 	nglWindow m_ngl_box_data;
 	std::shared_ptr<debug_menu_entry_list> m_default_entry_list;
 	std::shared_ptr<debug_menu_entry_list> m_current_entry_list;

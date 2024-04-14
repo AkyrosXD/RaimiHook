@@ -27,11 +27,11 @@ void nglDrawWindow(nglWindow* const window)
 void nglGetTextSize(const char* text, int* ref_width, int* ref_height, const float& scale_x, const float& scale_y)
 {
 ;	DEFINE_FUNCTION(__int16, __cdecl, 0x8D9410, (void*, const char*, int*, int*, float, float));
-	sub_0x8D9410(*(void**)0x11081B8, text, ref_width, ref_height, scale_x, scale_y);
+	sub_0x8D9410(*reinterpret_cast<void**>(0x11081B8), text, ref_width, ref_height, scale_x, scale_y);
 }
 
 void nglDrawText(const char* text, const nglColor_t& color, const float& x, const float& y, const float& scale_x, const float& scale_y)
 {
 	DEFINE_FUNCTION(int, __cdecl, 0x8D9820, (void*, const char*, float, float, float, int, float, float));
-	sub_0x8D9820(*(void**)0x11081B8, text, x, y, -9999.0f, color, scale_x, scale_y);
+	sub_0x8D9820(*reinterpret_cast<void**>(0x11081B8), text, x, y, -9999.0f, color, scale_x, scale_y);
 }

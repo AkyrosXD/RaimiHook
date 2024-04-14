@@ -2,17 +2,17 @@
 
 entity_node* game::get_entities()
 {
-	return *(entity_node**)0xDEB84C;
+	return *reinterpret_cast<entity_node**>(0xDEB84C);
 }
 
 entity_node* game::get_pedestrians()
 {
-	return *(entity_node**)0xDEBCA8;
+	return *reinterpret_cast<entity_node**>(0xDEBCA8);
 }
 
 region* game::get_regions()
 {
-	return **(region***)0x00F23780;
+	return **reinterpret_cast<region***>(0x00F23780);
 }
 
 void game::toggle_pause(const int& type)
