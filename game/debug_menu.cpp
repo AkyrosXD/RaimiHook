@@ -3,7 +3,7 @@
 debug_menu::debug_menu(const char* title, float x, float y)
 {
 	this->m_is_open = false;
-	this->m_default_entry_list = std::make_unique<debug_menu_entry_list>(title);
+	this->m_default_entry_list = std::make_shared<debug_menu_entry_list>(title);
 	this->m_current_entry_list = this->m_default_entry_list;
 	this->on_show = nullptr;
 	this->on_hide = nullptr;

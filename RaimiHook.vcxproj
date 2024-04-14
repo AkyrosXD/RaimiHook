@@ -162,6 +162,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DebugMenuFunctions.cpp" />
+    <ClCompile Include="DebugMenuUI.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="game\app.cpp" />
     <ClCompile Include="game\blacksuit_player_interface.cpp" />
@@ -184,9 +186,13 @@
     <ClCompile Include="game\slf.cpp" />
     <ClCompile Include="game\string_hash.cpp" />
     <ClCompile Include="game\xenon_input_mgr.cpp" />
+    <ClCompile Include="RegionUtils.cpp" />
+    <ClCompile Include="SpawnPointUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="d3d9_proxy.hpp" />
+    <ClInclude Include="DebugMenuFunctions.hpp" />
+    <ClInclude Include="DebugMenuUI.hpp" />
     <ClInclude Include="game\app.hpp" />
     <ClInclude Include="game\blacksuit_player_interface.hpp" />
     <ClInclude Include="game\camera.hpp" />
@@ -216,6 +222,9 @@
     <ClInclude Include="game\windows_app.hpp" />
     <ClInclude Include="game\xenon_input_mgr.hpp" />
     <ClInclude Include="game\xinput1_1.hpp" />
+    <ClInclude Include="MissionScripts.hpp" />
+    <ClInclude Include="RegionUtils.hpp" />
+    <ClInclude Include="SpawnPointUtils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="d3d9.def" />
