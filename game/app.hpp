@@ -4,6 +4,7 @@
 #include "game.hpp"
 
 #define SM3_FIXED_DELTA_TIME 0.033333335f
+#define SM3_MIN_FIXED_DELTA_TIME 0.0000001f
 
 #pragma pack(push, 1)
 /// <summary>

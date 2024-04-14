@@ -72,9 +72,9 @@ struct app_hooks
 
 				if (s_DebugMenuToggles.bUnlockFPS)
 				{
-					app::fixed_delta_time = 0.0f;
+					app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
 				}
-				else if (app::fixed_delta_time != SM3_FIXED_DELTA_TIME)
+				else
 				{
 					app::fixed_delta_time = SM3_FIXED_DELTA_TIME;
 				}

@@ -342,6 +342,20 @@ void debug_menu::handle_input()
 		return;
 	}
 
+	const float dt = app::get_delta_time();
+	
+	if (app::fixed_delta_time <= SM3_MIN_FIXED_DELTA_TIME)
+	{
+		this->last_input_time += dt;
+
+		if (this->last_input_time < SM3_FIXED_DELTA_TIME)
+		{
+			return;
+		}
+
+		this->last_input_time = 0;
+	}
+
 	input_mgr::initialize();
 
 	if (!xenon_input_mgr::is_initialized())
@@ -361,14 +375,6 @@ void debug_menu::handle_input()
 	if (!this->m_is_open)
 		return;
 
-	this->last_input_time += app::get_delta_time();
-
-	if (this->last_input_time < SM3_FIXED_DELTA_TIME)
-	{
-		return;
-	}
-
-	this->last_input_time = 0;
 	const std::shared_ptr<debug_menu_entry> selected_entry = this->get_selected_entry();
 	const size_t last_entry_index = this->m_current_entry_list->size() - 1;
 
