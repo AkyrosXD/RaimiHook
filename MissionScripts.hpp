@@ -561,5 +561,3 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
 	}
 };
-
-void LoadMissionScript(RHCheckpointScript* mission);

@@ -32,6 +32,12 @@ public:
 	/// Create a new player_interface instance
 	/// </summary>
 	player_interface();
+
+	/// <summary>
+	/// If the player is in photo mode - taking a picture with the camera
+	/// </summary>
+	static bool& is_photo_mode;
+
 };
 #pragma pack(pop)
 

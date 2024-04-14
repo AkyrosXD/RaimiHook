@@ -97,7 +97,7 @@ struct app_hooks
 				}
 			}
 
-			if (s_FovSlider != nullptr)
+			if (s_FovSlider != nullptr && !player_interface::is_photo_mode)
 			{
 				app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_MIN_FOV + s_FovSlider->sublist->selected_entry_index);
 			}
@@ -215,7 +215,7 @@ void StartThread(HANDLE mainThread)
 
 	IGOFrontEnd_hooks::original_IGOFrontEnd__Draw = reinterpret_cast<IGOFrontEnd_hooks::IGOFrontEnd__Draw_t>(IGOFrontEnd_hooks::DRAW_ADDRESS);
 	auto ptrDrawHook = &IGOFrontEnd_hooks::Draw;
-	DetourAttach(&(PVOID&)IGOFrontEnd_hooks::original_IGOFrontEnd__Draw, reinterpret_cast<const PVOID&>(ptrDrawHook));
+	DetourAttach(&reinterpret_cast<PVOID&>(IGOFrontEnd_hooks::original_IGOFrontEnd__Draw), reinterpret_cast<const PVOID&>(ptrDrawHook));
 
 	original_load_scene_animation = reinterpret_cast<load_scene_animation_t>(LOAD_SCENE_ANIMATION_ADDRESS);
 	DetourAttach(&reinterpret_cast<PVOID&>(original_load_scene_animation), &load_scene_animation_hook);

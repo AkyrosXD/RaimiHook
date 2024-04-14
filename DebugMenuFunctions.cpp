@@ -90,10 +90,13 @@ void SetWorldTime(DWORD hours)
 
 void SetCameraFovDefault()
 {
-	app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_DEFAULT_FOV);
-	if (s_FovSlider != nullptr && s_FovSlider->sublist->size() > SM3_CAMERA_DEFAULT_FOV)
+	if (!player_interface::is_photo_mode)
 	{
-		s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+		app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_DEFAULT_FOV);
+		if (s_FovSlider != nullptr && s_FovSlider->sublist->size() > SM3_CAMERA_DEFAULT_FOV)
+		{
+			s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+		}
 	}
 }
 

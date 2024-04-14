@@ -1,6 +1,7 @@
 #include "DebugMenuUI.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 #include "MissionScripts.hpp"
 #include "RegionUtils.hpp"
