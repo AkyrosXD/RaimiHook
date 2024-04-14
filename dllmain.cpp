@@ -185,19 +185,8 @@ void load_scene_animation_hook(DWORD a1, DWORD a2, DWORD a3, void* a4)
 	return original_load_scene_animation(a1, a2, a3, a4);
 }
 
-#ifdef _DEBUG
-void AllocDebugConsole()
-{
-	AllocConsole();
-	static_cast<void>(freopen("CONOUT$", "w", stdout));
-}
-#endif // _DEBUG
-
 void StartThread(HANDLE mainThread)
 {
-#ifdef _DEBUG
-	AllocDebugConsole();
-#endif // _DEBUG
 	DetourTransactionBegin();
 
 	original_nglPresent = reinterpret_cast<nglPresent_t>(NGL_PRESENT_ADDRESS);

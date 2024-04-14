@@ -25,4 +25,4 @@ void TeleportToNearestEntity();
 void TeleportAllPedestriansToMe();
 void LoadCutscene(const char* instance);
 void SpawnToNearestSpawnPoint();
-void LoadMissionScript(RHCheckpointScript* mission);
+ void LoadMissionScript(RHCheckpointScript* mission);
