@@ -21,7 +21,7 @@ debug_menu::debug_menu(const char* title, float x, float y)
 	this->m_height = static_cast<float>(this->m_default_height);
 	nglSetWindowColor(&this->m_ngl_box_data, 0xC0000000);
 	this->m_current_callback = { nullptr, nullptr };
-	this->last_input_type = 0;
+	this->last_input_time = 0;
 }
 
 bool debug_menu::get_on_hide()
@@ -361,14 +361,14 @@ void debug_menu::handle_input()
 	if (!this->m_is_open)
 		return;
 
-	this->last_input_type += app::get_delta_time();
+	this->last_input_time += app::get_delta_time();
 
-	if (this->last_input_type < SM3_FIXED_DELTA_TIME)
+	if (this->last_input_time < SM3_FIXED_DELTA_TIME)
 	{
 		return;
 	}
 
-	this->last_input_type = 0;
+	this->last_input_time = 0;
 	const std::shared_ptr<debug_menu_entry> selected_entry = this->get_selected_entry();
 	const size_t last_entry_index = this->m_current_entry_list->size() - 1;
 
