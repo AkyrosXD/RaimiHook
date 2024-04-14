@@ -352,7 +352,7 @@ void debug_menu::handle_input()
 		xenon_input_mgr::update_state();
 	}
 
-	if (input_mgr::is_key_pressed_once(VK_INSERT) || (xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_LEFT_THUMB) && xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_RIGHT_THUMB)))
+	if (input_mgr::is_key_pressed_once(VK_INSERT) || xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_LEFT_THUMB))
 	{
 		this->m_is_open = (!(this->m_is_open && this->get_on_hide()) && (!this->m_is_open && this->get_on_show()));
 	}
