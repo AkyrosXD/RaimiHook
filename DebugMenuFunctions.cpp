@@ -233,12 +233,6 @@ void SpawnToNearestSpawnPoint()
 	}
 }
 
-static bool movieplaying()
-{
-	DEFINE_FUNCTION(bool, __cdecl, 0x69D4E0, ());
-	return sub_0x69D4E0();
-}
-
 void LoadMissionScript(RHCheckpointScript* mission)
 {
 	if (!mission_manager::has_inst())
