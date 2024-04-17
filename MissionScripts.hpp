@@ -498,7 +498,7 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 
 				RHCheckpointScript(1)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
-					.spawn_position(vector3d({ -2005.964f, -204, -465.470f })),
+					.spawn_position(vector3d({ -2045, 1.5f, -535 })),
 
 				RHCheckpointScript(2)
 					.type(E_RH_MISSION_SCRIPT_TYPE::E_POSITION)
@@ -539,25 +539,31 @@ static RHMissionScript s_MissionsScripts[] = /* MEGACITY.PCPACK */
 	{
 		RHMissionScript("PHOTO_CITY_TOUR")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	},
 	{
 		RHMissionScript("PHOTO_BEAUTY_CONTEST_1")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	},
 	{
 		RHMissionScript("PHOTO_GANG_EXO_1")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	},
 	{
 		RHMissionScript("PHOTO_EXOBITION_1")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	},
 	{
 		RHMissionScript("PHOTO_STUNTMAN")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	},
 	{
 		RHMissionScript("PHOTO_UFO")
 			.type(E_RH_MISSION_SCRIPT_TYPE::E_PHOTO)
+			.delay_load()
 	}
 };
