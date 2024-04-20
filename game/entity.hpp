@@ -52,8 +52,17 @@ struct entity_transform
 	float unk3[2];
 	float pitch2;
 	float unk2[2];
+
+	/// <summary>
+	/// Rotation yaw
+	/// </summary>
 	float real_yaw;
+
+	/// <summary>
+	/// Rotation pitch
+	/// </summary>
 	float pitch;
+
 	float unk[2];
 
 	/// <summary>
@@ -61,6 +70,10 @@ struct entity_transform
 	/// </summary>
 	vector3d position;
 
+	/// <summary>
+	/// Gets the forward axis of the transform
+	/// </summary>
+	/// <returns>The forward axis of the transform</returns>
 	inline vector3d forward() const
 	{
 		vector3d result{};
@@ -70,6 +83,10 @@ struct entity_transform
 		return result;
 	}
 
+	/// <summary>
+	/// Gets the back axis of the transform
+	/// </summary>
+	/// <returns>The back axis of the transform</returns>
 	inline vector3d back() const
 	{
 		vector3d result{};
@@ -79,6 +96,10 @@ struct entity_transform
 		return result;
 	}
 
+	/// <summary>
+	/// Gets the right axis of the transform
+	/// </summary>
+	/// <returns>The right axis of the transform</returns>
 	inline vector3d right() const
 	{
 		vector3d result{};
@@ -87,6 +108,10 @@ struct entity_transform
 		return result;
 	}
 
+	/// <summary>
+	/// Gets the left axis of the transform
+	/// </summary>
+	/// <returns>The left axis of the transform</returns>
 	inline vector3d left() const
 	{
 		vector3d result{};
@@ -95,7 +120,7 @@ struct entity_transform
 		return result;
 	}
 
-	inline vector3d up() const
+	/*inline vector3d up() const
 	{
 		return vector3d({ 0, 1, 0 });
 	}
@@ -103,7 +128,7 @@ struct entity_transform
 	inline vector3d down() const
 	{
 		return vector3d({ 0, -1, 0 });
-	}
+	}*/
 };
 #pragma pack(pop)
 

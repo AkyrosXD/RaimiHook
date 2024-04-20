@@ -13,9 +13,9 @@ struct nglWindow
 };
 
 /// <summary>
-/// Creates a new nglBox
+/// Creates a new nglWindow
 /// </summary>
-/// <param name="box">Pointer to the target nglBox</param>
+/// <param name="box">Pointer to the target nglWindow</param>
 void nglConstructWindow(nglWindow* const window);
 
 /// <summary>

@@ -6,6 +6,7 @@
 #define SM3_CAMERA_MIN_FOV 1
 #define SM3_CAMERA_MAX_FOV 180
 
+#pragma pack(push, 1)
 /// <summary>
 /// NGL Camera Object class
 /// </summary>
@@ -31,7 +32,9 @@ public:
 	/// <param name="value">the value of field of view to set</param>
 	void set_fov(const int& value);
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 /// <summary>
 /// Camera settings struct
 /// </summary>
@@ -40,3 +43,4 @@ struct camera_settings
 	char unk[92];
 	bool is_user_mode;
 };
+#pragma pack(pop)

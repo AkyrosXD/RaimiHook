@@ -56,6 +56,9 @@ enum class E_MISSION_STATUS : DWORD
 };
 
 #pragma pack(push, 1)
+/// <summary>
+/// Mission manager class
+/// </summary>
 class mission_manager : public singleton<mission_manager, 0xDE7D88>
 {
 private:

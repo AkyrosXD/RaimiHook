@@ -2,6 +2,7 @@
 
 #include "IGOFrontEnd.hpp"
 
+#pragma pack(push, 1)
 /// <summary>
 /// Front-End Manager class
 /// </summary>
@@ -21,3 +22,4 @@ public:
 	/// <returns>Status code</returns>
 	int DrawIGO();
 };
+#pragma pack(pop)

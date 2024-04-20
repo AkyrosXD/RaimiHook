@@ -18,6 +18,7 @@ enum class E_UPGRADE_NOTIFICATION_TYPE : DWORD
 	ANNOTATION
 };
 
+#pragma pack(push, 1)
 /// <summary>
 /// Expereince upgrade base struct
 /// </summary>
@@ -33,7 +34,9 @@ struct experience_upgrade_base
 	/// </summary>
 	DWORD status;
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 /// <summary>
 /// Experience upgrade struct
 /// </summary>
@@ -46,7 +49,9 @@ struct experience_upgrade
 
 	void* unk0;
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 /// <summary>
 /// Expereince upgrade grou struct
 /// </summary>
@@ -72,6 +77,7 @@ struct experience_upgrade_group
 	/// </summary>
 	bool upgraded; // offset = 20
 };
+#pragma pack(pop)
 
 /// <summary>
 /// Experience tracker class
