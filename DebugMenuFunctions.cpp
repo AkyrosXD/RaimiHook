@@ -218,7 +218,7 @@ void LoadCutscene(const char* instance)
 	if (mission_manager::has_inst())
 	{
 		mission_manager::inst()->prepare_mission_script_instance(instance);
-		void* const script = mission_manager::inst()->scripts->front();
+		void* const script = mission_manager::inst()->scripts->head->_Next->_Myval;
 		mission_manager::inst()->clear_scripts();
 		mission_manager::inst()->execute_script(script);
 	}
@@ -238,7 +238,7 @@ void LoadMissionScript(RHCheckpointScript* mission)
 	if (!mission_manager::has_inst())
 		return;
 
-	if (mission_manager::inst()->scripts->size() > 0)
+	if (mission_manager::inst()->scripts->size > 0)
 		return;
 
 	mission_manager::inst()->unload_current_mission();
@@ -298,7 +298,7 @@ void LoadMissionScript(RHCheckpointScript* mission)
 
 		mission_checkpoint_t* const checkpointPtr = game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint");
 
-		void* const script = mission_manager::inst()->scripts->front();
+		void* const script = mission_manager::inst()->scripts->head->_Next->_Myval;
 		mission_manager::inst()->clear_scripts();
 		mission_manager::inst()->execute_script(script);
 		*checkpointPtr = mission->selected_checkpoint;

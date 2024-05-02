@@ -8,7 +8,7 @@ void mission_manager::prepare_mission_script_instance(const char* instance)
 
 void mission_manager::clear_scripts()
 {
-	DEFINE_FUNCTION(void, __thiscall, 0x5FC4B0, (std::list<void*>*));
+	DEFINE_FUNCTION(void, __thiscall, 0x5FC4B0, (mylist<void*>*));
 	sub_0x5FC4B0(this->scripts);
 }
 

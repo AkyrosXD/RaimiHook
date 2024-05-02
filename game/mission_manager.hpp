@@ -2,7 +2,6 @@
 
 #include "singleton.hpp"
 #include "game.hpp"
-#include <list>
 
 /// <summary>
 /// Mission Status
@@ -55,6 +54,26 @@ enum class E_MISSION_STATUS : DWORD
 	MISSION_LOADING = 17
 };
 
+/// <summary>
+/// Replica of std::list. We need this because MSVC optimizes std::list
+/// in release mode and breaks some things...
+/// </summary>
+/// <typeparam name="T">Data type</typeparam>
+template <typename T>
+struct mylist
+{
+	struct list_node
+	{
+		list_node* _Next;
+		list_node* _Prev;
+		T _Myval;
+	};
+
+	void* ptr;
+	list_node* head;
+	unsigned int size;
+};
+
 #pragma pack(push, 1)
 /// <summary>
 /// Mission manager class
@@ -79,7 +98,7 @@ public:
 	/// <summary>
 	/// A list of mission scripts getting prepared to be loaded
 	/// </summary>
-	std::list<void*>* scripts;
+	mylist<void*>* scripts;
 
 	/// <summary>
 	/// Prepares the script for the mission of the given script instance
