@@ -1,12 +1,30 @@
 #pragma once
 
 #include <type_traits>
+#include <math.h>
+
 #include "singleton.hpp"
 #include "numerics.hpp"
 #include "player_interface.hpp"
 
 #define ENTIY_DATA_ID_HEALTH 0
 #define ENTIY_DATA_ID_INTERFACE 11
+
+/// <summary>
+/// Entity collider flags
+/// </summary>
+enum class E_ENTITY_COLLIDER_FLAGS : int
+{
+	/// <summary>
+	/// Collider default value
+	/// </summary>
+	E_DEFAULT = 803700,
+
+	/// <summary>
+	/// Collider is disabled
+	/// </summary>
+	E_DISABLED = 17564528
+};
 
 #pragma pack(push, 1)
 /// <summary>
@@ -46,89 +64,12 @@ public:
 /// </summary>
 struct entity_transform
 {
-	float yaw;
-	float unk4;
-	float yaw2;
-	float unk3[2];
-	float pitch2;
-	float unk2[2];
-
-	/// <summary>
-	/// Rotation yaw
-	/// </summary>
-	float real_yaw;
-
-	/// <summary>
-	/// Rotation pitch
-	/// </summary>
-	float pitch;
-
-	float unk[2];
+	float rotation_matrix[12];
 
 	/// <summary>
 	/// The world position of the entity
 	/// </summary>
 	vector3d position;
-
-	/// <summary>
-	/// Gets the forward axis of the transform
-	/// </summary>
-	/// <returns>The forward axis of the transform</returns>
-	inline vector3d forward() const
-	{
-		vector3d result{};
-		result.z = sinf(this->yaw);
-		result.y = sinf(this->pitch);
-		result.x = -sinf(this->yaw2);
-		return result;
-	}
-
-	/// <summary>
-	/// Gets the back axis of the transform
-	/// </summary>
-	/// <returns>The back axis of the transform</returns>
-	inline vector3d back() const
-	{
-		vector3d result{};
-		result.x = sinf(this->yaw2);
-		result.y = -sinf(this->pitch);
-		result.z = -sinf(this->yaw);
-		return result;
-	}
-
-	/// <summary>
-	/// Gets the right axis of the transform
-	/// </summary>
-	/// <returns>The right axis of the transform</returns>
-	inline vector3d right() const
-	{
-		vector3d result{};
-		result.x = -sinf(this->yaw);
-		result.z = -sinf(this->yaw2);
-		return result;
-	}
-
-	/// <summary>
-	/// Gets the left axis of the transform
-	/// </summary>
-	/// <returns>The left axis of the transform</returns>
-	inline vector3d left() const
-	{
-		vector3d result{};
-		result.x = sinf(this->yaw);
-		result.z = sinf(this->yaw2);
-		return result;
-	}
-
-	/*inline vector3d up() const
-	{
-		return vector3d({ 0, 1, 0 });
-	}
-
-	inline vector3d down() const
-	{
-		return vector3d({ 0, -1, 0 });
-	}*/
 };
 #pragma pack(pop)
 
@@ -145,8 +86,10 @@ public:
 	/// Transform properties
 	/// </summary>
 	entity_transform* transform;
+public:
+	E_ENTITY_COLLIDER_FLAGS collider_flags;
 private:
-	char unk1[8];
+	char unk1[4];
 	void* data_ptr;
 
 private:

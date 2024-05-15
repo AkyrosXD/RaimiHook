@@ -6,12 +6,6 @@ void mission_manager::prepare_mission_script_instance(const char* instance)
 	sub_0x571C60(this, instance);
 }
 
-void mission_manager::clear_scripts()
-{
-	DEFINE_FUNCTION(void, __thiscall, 0x5FC4B0, (mylist<void*>*));
-	sub_0x5FC4B0(this->scripts);
-}
-
 void mission_manager::execute_script(void* const& script)
 {
 	DEFINE_FUNCTION(void, __thiscall, 0x564900, (mission_manager*, void*));

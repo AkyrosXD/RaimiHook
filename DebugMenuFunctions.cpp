@@ -134,6 +134,27 @@ void SetCameraMode()
 	}
 }
 
+void SetHeroColliderFlags(E_ENTITY_COLLIDER_FLAGS flags)
+{
+	if (world::has_inst() && world::inst()->hero_entity != nullptr)
+	{
+		E_ENTITY_COLLIDER_FLAGS& flagsRef = world::inst()->hero_entity->collider_flags;
+
+		const bool wasDisabled = (flagsRef == E_ENTITY_COLLIDER_FLAGS::E_DISABLED);
+
+		const vector3d& pos = world::inst()->hero_entity->transform->position;
+
+		flagsRef = flags;
+
+		if (wasDisabled && flagsRef == E_ENTITY_COLLIDER_FLAGS::E_DEFAULT)
+		{
+			// the game will sometimes teleport the player when we enable back the collider.
+			// to prevent this, we teleport the player back to its original position
+			world::inst()->set_hero_rel_position(pos);
+		}
+	}
+}
+
 void KillAllEntities()
 {
 	size_t entities_killed = 0;
@@ -219,7 +240,7 @@ void LoadCutscene(const char* instance)
 	{
 		mission_manager::inst()->prepare_mission_script_instance(instance);
 		void* const script = mission_manager::inst()->scripts->head->_Next->_Myval;
-		mission_manager::inst()->clear_scripts();
+		mission_manager::inst()->scripts->clear();
 		mission_manager::inst()->execute_script(script);
 	}
 }
@@ -299,7 +320,7 @@ void LoadMissionScript(RHCheckpointScript* mission)
 		mission_checkpoint_t* const checkpointPtr = game_vars::inst()->get_var_array<mission_checkpoint_t>("story_checkpoint");
 
 		void* const script = mission_manager::inst()->scripts->head->_Next->_Myval;
-		mission_manager::inst()->clear_scripts();
+		mission_manager::inst()->scripts->clear();
 		mission_manager::inst()->execute_script(script);
 		*checkpointPtr = mission->selected_checkpoint;
 	};

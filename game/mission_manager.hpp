@@ -72,6 +72,12 @@ struct mylist
 	void* ptr;
 	list_node* head;
 	unsigned int size;
+
+	inline void clear()
+	{
+		DEFINE_FUNCTION(void, __thiscall, 0x5FC4B0, (mylist<T>*));
+		sub_0x5FC4B0(this);
+	}
 };
 
 #pragma pack(push, 1)
@@ -105,11 +111,6 @@ public:
 	/// </summary>
 	/// <param name="instance">Name of the script instance. The names can be found in MEGACITY.PCPACK file.</param>
 	void prepare_mission_script_instance(const char* instance);
-
-	/// <summary>
-	/// Clears all the scripts that are currently being prepared
-	/// </summary>
-	void clear_scripts();
 
 	/// <summary>
 	/// Executes the current mission script

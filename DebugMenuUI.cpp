@@ -371,6 +371,13 @@ void CreateEntitiesEntry()
 	entitiesMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport To Nearest", &TeleportToNearestEntity, nullptr);
 }
 
+void CreatePhysicsMenu()
+{
+	const std::shared_ptr<debug_menu_entry> physicsMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Physics", nullptr, nullptr);
+	physicsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Disable Collisions", &SetHeroColliderFlags, reinterpret_cast<void*>(E_ENTITY_COLLIDER_FLAGS::E_DISABLED));
+	physicsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Enable Collisions", &SetHeroColliderFlags, reinterpret_cast<void*>(E_ENTITY_COLLIDER_FLAGS::E_DEFAULT));
+}
+
 void CreateWarpEntry()
 {
 	s_WarpButton = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Warp", nullptr, nullptr);
@@ -418,6 +425,8 @@ void CreateDebugMenu()
 	CreateTimerEntry();
 
 	CreateEntitiesEntry();
+
+	CreatePhysicsMenu();
 
 	CreateWarpEntry();
 
