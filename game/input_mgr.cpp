@@ -1,53 +1,13 @@
 #include "input_mgr.hpp"
 #include "windows_app.hpp"
+#include <iostream>
 
 #define MAX_KEYS 0xFE
+#define REPEAT_DELAY 500
 
 static E_INPUT_MANAGER_TYPE m_input_type = E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD;
 static ULONGLONG pressed_times[MAX_KEYS] = {};
-static bool keys_repeated[MAX_KEYS] = {};
-
-static bool m_initialized = false;
-
-LRESULT CALLBACK WndProc(
-	HWND hwnd,        // handle to window
-	UINT uMsg,        // message identifier
-	WPARAM wParam,    // first message parameter
-	LPARAM lParam)    // second message parameter
-{
-	if (wParam < MAX_KEYS && wParam >= 0)
-	{
-		const int vKey = static_cast<int>(wParam);
-		const bool repeat = !((HIWORD(lParam) & KF_REPEAT) == 0);
-
-		switch (uMsg)
-		{
-		case WM_KEYDOWN:
-			input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD);
-			keys_repeated[vKey] = repeat;
-			break;
-
-		case WM_KEYUP:
-			input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::E_MOUSEKYBOARD);
-			keys_repeated[vKey] = false;
-			break;
-		}
-	}
-	if (uMsg == WM_DESTROY)
-	{
-		PostQuitMessage(0);
-	}
-	return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-void input_mgr::initialize()
-{
-	if (!m_initialized)
-	{
-		SetWindowLongPtr(GetForegroundWindow(), GWL_WNDPROC, (LONG)&WndProc);
-		m_initialized = true;
-	}
-}
+static ULONGLONG last_hold_times[MAX_KEYS] = {};
 
 bool input_mgr::is_key_pressed(const int& vKey)
 {
@@ -64,7 +24,24 @@ bool input_mgr::is_key_pressed_once(const int& vKey)
 
 bool input_mgr::is_key_pressed_repeated(const int& vKey)
 {
-	return keys_repeated[vKey];
+	const bool is_pressed = is_key_pressed(vKey);
+
+	if (!is_pressed)
+	{
+		last_hold_times[vKey] = 0;
+		return false;
+	}
+
+	const ULONGLONG ticks = GetTickCount64();
+
+	if (last_hold_times[vKey] == 0)
+	{
+		last_hold_times[vKey] = ticks;
+	}
+
+	const ULONGLONG holding_time = ticks - last_hold_times[vKey];
+
+	return holding_time >= REPEAT_DELAY;
 }
 
 void input_mgr::set_current_input_type(const E_INPUT_MANAGER_TYPE& value)

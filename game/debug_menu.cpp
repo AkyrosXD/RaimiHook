@@ -356,8 +356,6 @@ void debug_menu::handle_input()
 		this->last_input_time = 0;
 	}
 
-	input_mgr::initialize();
-
 	if (!xenon_input_mgr::is_initialized())
 	{
 		xenon_input_mgr::initialize();

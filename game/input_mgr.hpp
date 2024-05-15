@@ -32,11 +32,6 @@ class input_mgr
 {
 public:
 	/// <summary>
-	/// Initialized the input manager
-	/// </summary>
-	static void initialize();
-
-	/// <summary>
 	/// If the key is pressed down
 	/// </summary>
 	/// <param name="vKey">The target key</param>
