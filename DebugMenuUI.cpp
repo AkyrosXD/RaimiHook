@@ -1,7 +1,6 @@
 #include "DebugMenuUI.hpp"
 
 #include <algorithm>
-#include <iostream>
 
 #include "MissionScripts.hpp"
 #include "RegionUtils.hpp"
@@ -36,6 +35,77 @@ std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect = nullptr;
 std::shared_ptr<debug_menu_entry> s_HeroPositionLabel = nullptr;
 
 DebugMenuToggles s_DebugMenuToggles;
+
+void SortRegionStripItem(const std::shared_ptr<debug_menu_entry>& stripItem)
+{
+	std::sort(stripItem->sublist->entries.begin(), stripItem->sublist->entries.end(), [](const std::shared_ptr<debug_menu_entry> lhs, const std::shared_ptr<debug_menu_entry> rhs)
+	{
+		const char* const lhsText = lhs->text;
+		const char* const rhsText = rhs->text;
+		size_t sz = min(strlen(lhsText), strlen(rhsText));
+		for (size_t i = 0; i < sz; i++)
+		{
+			if (lhsText[i] < rhsText[i])
+			{
+				return true;
+			}
+			else if (rhsText[i] < lhsText[i])
+			{
+				return false;
+			}
+		}
+
+		return false;
+	});
+}
+
+void AddRegionToMenu(const std::shared_ptr<debug_menu_entry>& stripItem, region* const& currentRegion)
+{
+	const std::shared_ptr<debug_menu_entry> regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
+
+	const bool exists = s_MenuRegions.find(currentRegion) != s_MenuRegions.end();
+	if (!exists)
+	{
+		MenuRegionInfo mri{ regionItem, stripItem };
+		s_MenuRegions.insert(std::pair<region*, MenuRegionInfo>(currentRegion, mri));
+	}
+	else
+	{
+		// remove accidental duplicates
+		// this is because some regions may have a prefix inside of their prefix
+		// for example, prefix "M" is inside the prefix "" 
+
+		MenuRegionInfo& mri = s_MenuRegions[currentRegion];
+		std::vector<std::shared_ptr<debug_menu_entry>>* items = &mri.region_entry_parent->sublist->entries;
+		const std::vector<std::shared_ptr<debug_menu_entry>>::iterator found = std::find(items->begin(), items->end(), mri.region_entry);
+		if (found != items->end())
+		{
+			items->erase(found);
+		}
+
+		mri.region_entry = regionItem;
+		mri.region_entry_parent = stripItem;
+	}
+}
+
+void CreateMenuRegionStrip(region* allRegions, MenuRegionStrip& rs)
+{
+	const std::shared_ptr<char> fullName = std::shared_ptr<char>(new char[REGION_FULL_NAME_MAX_CHAR]);
+	sprintf(fullName.get(), "MEGACITY_STRIP_%s", rs.name);
+	const std::shared_ptr<debug_menu_entry> stripItem = s_WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName.get(), nullptr, nullptr);
+	rs.name_length = strlen(rs.name);
+
+	for (size_t j = 0; j < SM3_REGIONS_COUNT; j++)
+	{
+		region* const currentRegion = allRegions + j;
+		if (strncmp(rs.name, currentRegion->name, rs.name_length) == 0)
+		{
+			AddRegionToMenu(stripItem, currentRegion);
+		}
+	}
+
+	SortRegionStripItem(stripItem);
+}
 
 void UpdateGameTimeEntry()
 {
@@ -79,72 +149,10 @@ void UpdateWarpEntry()
 	if (s_WarpButton != nullptr && s_WarpButton->sublist->empty())
 	{
 		region* regions = game::get_regions();
-		for (size_t i = 0; i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
+		for (size_t i = 0; regions != nullptr && i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
 		{
-			MenuRegionStrip* rs = s_RegionStrips + i;
-			const std::shared_ptr<char> fullName = std::shared_ptr<char>(new char[REGION_FULL_NAME_MAX_CHAR]);
-			sprintf(fullName.get(), "MEGACITY_STRIP_%s", rs->name);
-			const std::shared_ptr<debug_menu_entry> stripItem = s_WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName.get(), nullptr, nullptr);
-			rs->name_length = strlen(rs->name);
-
-			if (regions != nullptr)
-			{
-				for (size_t j = 0; j < SM3_REGIONS_COUNT; j++)
-				{
-					region* currentRegion = regions + j;
-					if (strncmp(rs->name, currentRegion->name, rs->name_length) == 0)
-					{
-						if (s_MenuRegions.find(currentRegion) == s_MenuRegions.end())
-						{
-							const std::shared_ptr<debug_menu_entry> regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
-							MenuRegionInfo mri{ regionItem, stripItem };
-							s_MenuRegions.insert(std::pair<region*, MenuRegionInfo>(currentRegion, mri));
-						}
-						else
-						{
-							MenuRegionInfo* mri = &s_MenuRegions[currentRegion];
-							std::vector<std::shared_ptr<debug_menu_entry>>* items = &mri->region_entry_parent->sublist->entries;
-							const std::vector<std::shared_ptr<debug_menu_entry>>::iterator found = std::find(items->begin(), items->end(), mri->region_entry);
-							if (found != items->end())
-							{
-								items->erase(found);
-							}
-
-							const std::shared_ptr<debug_menu_entry> regionItem = stripItem->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, currentRegion->name, &LoadInterior, currentRegion);
-							mri->region_entry = regionItem;
-							mri->region_entry_parent = stripItem;
-						}
-					}
-				}
-			}
-
-			std::sort(stripItem->sublist->entries.begin(), stripItem->sublist->entries.end(), [](const std::shared_ptr<debug_menu_entry> lhs, const std::shared_ptr<debug_menu_entry> rhs)
-			{
-				const char* lhsText = lhs->text;
-				const char* rhsText = rhs->text;
-				size_t sz = min(strlen(lhsText), strlen(rhsText));
-				bool diff = false;
-				for (size_t i = 0; i < sz; i++)
-				{
-					if (lhsText[i] < rhsText[i])
-					{
-						if (!diff)
-						{
-							return true;
-						}
-						diff = true;
-					}
-					else if (rhsText[i] < lhsText[i])
-					{
-						if (!diff)
-						{
-							return false;
-						}
-						diff = true;
-					}
-				}
-				return false;
-			});
+			MenuRegionStrip& rs = s_RegionStrips[i];
+			CreateMenuRegionStrip(regions, rs);
 		}
 	}
 }
