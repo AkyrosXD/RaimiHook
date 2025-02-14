@@ -1,5 +1,11 @@
 #include "mission_manager.hpp"
 
+void mission_manager::stop_music()
+{
+	DEFINE_FUNCTION(void, __cdecl, 0x5425F0, ());
+	sub_0x5425F0();
+}
+
 void mission_manager::prepare_mission_script_instance(const char* instance)
 {
 	DEFINE_FUNCTION(void*, __thiscall, 0x571C60, (mission_manager*, const char*));
@@ -20,7 +26,7 @@ void mission_manager::end_mission(const bool& success, const bool& skip_screen)
 
 void mission_manager::unload_current_mission()
 {
-	DEFINE_FUNCTION(void, __fastcall, 0x570340, (mission_manager*));
+	DEFINE_FUNCTION(void, __thiscall, 0x570340, (mission_manager*));
 	sub_0x570340(this);
 }
 

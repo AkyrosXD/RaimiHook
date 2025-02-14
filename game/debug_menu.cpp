@@ -26,23 +26,21 @@ debug_menu::debug_menu(const char* title, float x, float y)
 
 bool debug_menu::get_on_hide()
 {
-	typedef bool(*hide_t)();
-	hide_t phide = (hide_t)this->on_hide;
-	if (phide != nullptr)
+	if (this->on_hide != nullptr)
 	{
-		return phide();
+		return this->on_hide();
 	}
+
 	return true;
 }
 
 bool debug_menu::get_on_show()
 {
-	typedef bool(*show_t)();
-	show_t pshow = (show_t)this->on_show;
-	if (pshow != nullptr)
+	if (this->on_show != nullptr)
 	{
-		return pshow();
+		return this->on_show();
 	}
+
 	return true;
 }
 
@@ -143,22 +141,22 @@ void debug_menu::hide()
 	this->m_is_open = false;
 }
 
-void debug_menu::set_on_show(void* callback)
+void debug_menu::set_on_show(const std::function<bool()>& callback)
 {
 	this->on_show = callback;
 }
 
-void debug_menu::set_on_hide(void* callback)
+void debug_menu::set_on_hide(const std::function<bool()>& callback)
 {
 	this->on_hide = callback;
 }
 
-void debug_menu::execute_current_callback()
+void debug_menu::execute_current_callback() const
 {
 	if (this->m_current_callback.callback_ptr != nullptr)
 	{
 		typedef void(*entrycallback_t)(void*);
-		entrycallback_t callback = (entrycallback_t)this->m_current_callback.callback_ptr;
+		const entrycallback_t callback = static_cast<entrycallback_t>(this->m_current_callback.callback_ptr);
 		callback(this->m_current_callback.callback_arg);
 	}
 }
@@ -567,7 +565,7 @@ void debug_menu::handle_input()
 	}
 }
 
-std::shared_ptr<debug_menu_entry> debug_menu_entry::add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg)
+std::shared_ptr<debug_menu_entry> debug_menu_entry::add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_callback_ptr, void* callback_arg) const
 {
 	return this->sublist->add_entry(this->parent, type, text, value_or_callback_ptr, callback_arg);
 }

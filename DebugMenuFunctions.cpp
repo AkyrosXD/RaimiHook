@@ -323,6 +323,7 @@ void LoadMissionScript(RHCheckpointScript* mission)
 		mission_manager::inst()->scripts->clear();
 		mission_manager::inst()->execute_script(script);
 		*checkpointPtr = mission->selected_checkpoint;
+		mission_manager::stop_music();
 	};
 
 	mission->has_delay ? std::thread(executeScript).detach() : executeScript();

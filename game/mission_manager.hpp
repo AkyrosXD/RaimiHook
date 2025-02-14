@@ -107,6 +107,11 @@ public:
 	mylist<void*>* scripts;
 
 	/// <summary>
+	/// Stops the current music playing
+	/// </summary>
+	static void stop_music();
+
+	/// <summary>
 	/// Prepares the script for the mission of the given script instance
 	/// </summary>
 	/// <param name="instance">Name of the script instance. The names can be found in MEGACITY.PCPACK file.</param>

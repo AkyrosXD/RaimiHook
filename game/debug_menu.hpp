@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include "ngl.hpp"
 #include "input_mgr.hpp"
@@ -162,7 +163,7 @@ public:
 	/// <param name="value_or_handle_ptr">A pointer to the corresponding value or the pointer of the callback function</param>
 	/// <param name="callback_arg">A pointer to the argument of the callback. Set this to NULL if this parameter is not needed</param>
 	/// <returns>A pointer to the added entry</returns>
-	std::shared_ptr<debug_menu_entry> add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg);
+	std::shared_ptr<debug_menu_entry> add_sub_entry(E_NGLMENU_ENTRY_TYPE type, const char* text, void* value_or_handle_ptr, void* callback_arg) const;
 };
 
 class debug_menu_entry_list
@@ -171,7 +172,7 @@ public:
 	/// <summary>
 	/// Current list of entries
 	/// </summary>
-	std::vector< std::shared_ptr<debug_menu_entry>> entries;
+	std::vector<std::shared_ptr<debug_menu_entry>> entries;
 
 	/// <summary>
 	/// Previous list
@@ -263,8 +264,8 @@ class debug_menu
 {
 private:
 	bool m_is_open;
-	void* on_show;
-	void* on_hide;
+	std::function<bool()> on_show;
+	std::function<bool()> on_hide;
 	const char* m_name;
 	float m_window_pos_x;
 	float m_window_pos_y;
@@ -327,13 +328,13 @@ public:
 	/// Sets the function callback for when the menu is opened
 	/// </summary>
 	/// <param name="callback">A pointer to the function</param>
-	void set_on_show(void* callback);
+	void set_on_show(const std::function<bool()>& callback);
 
 	/// <summary>
 	/// Sets the function callback for when the menu is closed
 	/// </summary>
 	/// <param name="callback">A pointer to the function</param>
-	void set_on_hide(void* callback);
+	void set_on_hide(const std::function<bool()>& callback);
 
 	/// <summary>
 	/// Adds an entry to the menu
@@ -348,7 +349,7 @@ public:
 	/// <summary>
 	/// Executes the current callback of the menu
 	/// </summary>
-	void execute_current_callback();
+	void execute_current_callback() const;
 
 	/// <summary>
 	/// Removes the current callback of the menu
