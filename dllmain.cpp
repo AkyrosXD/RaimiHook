@@ -112,15 +112,32 @@ struct mission_manager_hooks : mission_manager
 {
 	typedef bool(__thiscall* mission_manager__on_district_unloaded_t)(mission_manager*, region*, bool);
 	static mission_manager__on_district_unloaded_t original_mission_manager__on_district_unloaded;
-
 	static const uintptr_t ON_DISTRICT_UNLOADED_ADDRESS = 0x551680;
 
+private:
+	static void* mad_momber_5_script;
+
+	bool is_current_mission_mad_bomber_5()
+	{
+		if (mad_momber_5_script == nullptr && world::has_inst() && world::inst()->hero_entity != nullptr)
+		{
+			this->prepare_mission_script_instance("STORY_INSTANCE_MAD_BOMBER_5");
+			mad_momber_5_script = this->scripts->head->_Next->_Myval;
+			this->scripts->clear();
+		}
+
+		return this->properties.last_executed_script == mad_momber_5_script && this->status == E_MISSION_STATUS::MISSION_IN_PROGRESS;
+	}
+
+public:
 	bool on_district_unloaded(region* reg, bool unloading)
 	{
-		if (unloading && this->playthrough_as_goblin() && strncmp(reg->name, "DBG", 3) == 0)
+		if (unloading && strncmp(reg->name, "DBG", 3) == 0)
 		{
-			// prevent daily bugle unloading when player is playing as new goblin
-			return false;
+			// prevent daily bugle unloading
+			// except when we are playing the mad bomber 5 mission
+			// because if we keept it loaded during that mission then we will have visual bugs
+			return this->is_current_mission_mad_bomber_5() && !this->playthrough_as_goblin();
 		}
 
 		return original_mission_manager__on_district_unloaded(this, reg, unloading);
@@ -128,6 +145,7 @@ struct mission_manager_hooks : mission_manager
 };
 
 mission_manager_hooks::mission_manager__on_district_unloaded_t mission_manager_hooks::original_mission_manager__on_district_unloaded;
+void* mission_manager_hooks::mad_momber_5_script;
 
 struct plr_loco_standing_state_hooks
 {

@@ -82,6 +82,26 @@ struct mylist
 
 #pragma pack(push, 1)
 /// <summary>
+/// Mission properties
+/// </summary>
+class mission_properties
+{
+private:
+	void* unk[9];
+
+public:
+	/// <summary>
+	/// Instance of the last script that got executed
+	/// </summary>
+	void* last_executed_script;
+
+private:
+	void* unk2[4];
+};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+/// <summary>
 /// Mission manager class
 /// </summary>
 class mission_manager : public singleton<mission_manager, 0xDE7D88>
@@ -98,13 +118,22 @@ public:
 	E_MISSION_STATUS status; // offset 336
 
 private:
-	char unk2[252];
+	char unk2[64];
+
+public:
+	/// <summary>
+	/// Current mission properties
+	/// </summary>
+	mission_properties properties; //offset 404
+
+private:
+	char unk3[132];
 
 public:
 	/// <summary>
 	/// A list of mission scripts getting prepared to be loaded
 	/// </summary>
-	mylist<void*>* scripts;
+	mylist<void*>* scripts; // offset 592
 
 	/// <summary>
 	/// Stops the current music playing
