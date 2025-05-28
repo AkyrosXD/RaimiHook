@@ -90,7 +90,7 @@ struct app_hooks
 					spi->combo_meter_current_value = spi->combo_meter_max_value;
 				}
 
-				if (s_DebugMenuToggles.bBlacksuitRage && mission_manager::inst()->playthrough_as_blacksuit())
+				if (s_DebugMenuToggles.bBlacksuitRage)
 				{
 					blacksuit_player_interface* const bpi = world::inst()->hero_entity->get_interface<blacksuit_player_interface>();
 					bpi->rage_meter_current_value = bpi->rage_meter_max_value;
