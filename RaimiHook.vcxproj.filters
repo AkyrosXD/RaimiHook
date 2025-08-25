@@ -96,6 +96,12 @@
     <ClCompile Include="DebugMenuFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="game\transform_matrix.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="FreecamController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="d3d9_proxy.hpp">
@@ -201,6 +207,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DebugMenuFunctions.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="game\transform_matrix.hpp">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="FreecamController.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

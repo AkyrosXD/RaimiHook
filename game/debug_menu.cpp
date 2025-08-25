@@ -21,7 +21,6 @@ debug_menu::debug_menu(const char* title, float x, float y)
 	this->m_height = static_cast<float>(this->m_default_height);
 	nglSetWindowColor(&this->m_ngl_box_data, 0xC0000000);
 	this->m_current_callback = { nullptr, nullptr };
-	this->last_input_time = 0;
 }
 
 bool debug_menu::get_on_hide()
@@ -340,30 +339,7 @@ void debug_menu::handle_input()
 		return;
 	}
 
-	const float dt = app::get_delta_time();
-	
-	if (app::fixed_delta_time <= SM3_MIN_FIXED_DELTA_TIME)
-	{
-		this->last_input_time += dt;
-
-		if (this->last_input_time < SM3_FIXED_DELTA_TIME)
-		{
-			return;
-		}
-
-		this->last_input_time = 0;
-	}
-
-	if (!xenon_input_mgr::is_initialized())
-	{
-		xenon_input_mgr::initialize();
-	}
-	else
-	{
-		xenon_input_mgr::update_state();
-	}
-
-	if (input_mgr::is_key_pressed_once(VK_INSERT) || xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_LEFT_THUMB))
+	if (input_mgr::is_key_pressed_once(DIK_INSERT) || xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_LEFT_THUMB))
 	{
 		this->m_is_open = (!(this->m_is_open && this->get_on_hide()) && (!this->m_is_open && this->get_on_show()));
 	}
@@ -374,35 +350,35 @@ void debug_menu::handle_input()
 	const std::shared_ptr<debug_menu_entry> selected_entry = this->get_selected_entry();
 	const size_t last_entry_index = this->m_current_entry_list->size() - 1;
 
-	const bool up = input_mgr::is_key_pressed_once(VK_W)
-		|| input_mgr::is_key_pressed_repeated(VK_W)
+	const bool up = input_mgr::is_key_pressed_once(DIK_W)
+		|| input_mgr::is_key_pressed_repeated(DIK_W)
 		|| xenon_input_mgr::left_thumb_up_once()
 		|| xenon_input_mgr::left_thumb_up_repeat();
 
-	const bool down = input_mgr::is_key_pressed_once(VK_S)
-		|| input_mgr::is_key_pressed_repeated(VK_S)
+	const bool down = input_mgr::is_key_pressed_once(DIK_S)
+		|| input_mgr::is_key_pressed_repeated(DIK_S)
 		|| xenon_input_mgr::left_thumb_down_once()
 		|| xenon_input_mgr::left_thumb_down_repeat();
 
 
 	const bool right =
-		input_mgr::is_key_pressed_once(VK_D)
-		|| input_mgr::is_key_pressed_repeated(VK_D)
+		input_mgr::is_key_pressed_once(DIK_D)
+		|| input_mgr::is_key_pressed_repeated(DIK_D)
 		|| xenon_input_mgr::left_thumb_right_once()
 		|| xenon_input_mgr::left_thumb_right_repeat();
 
 
-	const bool left = input_mgr::is_key_pressed_once(VK_A)
-		|| input_mgr::is_key_pressed_repeated(VK_A)
+	const bool left = input_mgr::is_key_pressed_once(DIK_A)
+		|| input_mgr::is_key_pressed_repeated(DIK_A)
 		|| xenon_input_mgr::left_thumb_left_once()
 		|| xenon_input_mgr::left_thumb_left_repeat();
 	
 	
-	const bool back = input_mgr::is_key_pressed_once(VK_ESCAPE)
+	const bool back = input_mgr::is_key_pressed_once(DIK_ESCAPE)
 		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_B)
 		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_B);
 	
-	const bool execute = input_mgr::is_key_pressed_once(VK_SPACE)
+	const bool execute = input_mgr::is_key_pressed_once(DIK_SPACE)
 		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_A);
 
 	if (up)

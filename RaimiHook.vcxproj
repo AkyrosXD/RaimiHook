@@ -171,6 +171,7 @@
     <ClCompile Include="DebugMenuFunctions.cpp" />
     <ClCompile Include="DebugMenuUI.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="FreecamController.cpp" />
     <ClCompile Include="game\app.cpp" />
     <ClCompile Include="game\blacksuit_player_interface.cpp" />
     <ClCompile Include="game\camera.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="game\experience_tracker.cpp" />
     <ClCompile Include="game\FEManager.cpp" />
     <ClCompile Include="game\game.cpp" />
+    <ClCompile Include="game\transform_matrix.cpp" />
     <ClCompile Include="game\world.cpp" />
     <ClCompile Include="game\world_dynamics_system.cpp" />
     <ClCompile Include="game\goblin_player_interface.cpp" />
@@ -199,6 +201,7 @@
     <ClInclude Include="d3d9_proxy.hpp" />
     <ClInclude Include="DebugMenuFunctions.hpp" />
     <ClInclude Include="DebugMenuUI.hpp" />
+    <ClInclude Include="FreecamController.hpp" />
     <ClInclude Include="game\app.hpp" />
     <ClInclude Include="game\blacksuit_player_interface.hpp" />
     <ClInclude Include="game\camera.hpp" />
@@ -207,6 +210,7 @@
     <ClInclude Include="game\experience_tracker.hpp" />
     <ClInclude Include="game\FEManager.hpp" />
     <ClInclude Include="game\game.hpp" />
+    <ClInclude Include="game\transform_matrix.hpp" />
     <ClInclude Include="game\world.hpp" />
     <ClInclude Include="game\world_dynamics_system.hpp" />
     <ClInclude Include="game\game_vars.hpp" />

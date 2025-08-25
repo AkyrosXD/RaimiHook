@@ -59,6 +59,11 @@ void KillHero()
 	hero_health_data->health = hero_health_data->min_health;
 }
 
+void TeleportToCamera()
+{
+	world::inst()->set_hero_rel_position(world::inst()->camera_transform.get_position());
+}
+
 void FailCurrentMission()
 {
 	if (mission_manager::has_inst() && mission_manager::inst()->status == E_MISSION_STATUS::MISSION_IN_PROGRESS)
@@ -142,7 +147,7 @@ void SetHeroColliderFlags(E_ENTITY_COLLIDER_FLAGS flags)
 
 		const bool wasDisabled = (flagsRef == E_ENTITY_COLLIDER_FLAGS::E_DISABLED);
 
-		const vector3d& pos = world::inst()->hero_entity->transform->position;
+		const vector3d& pos = world::inst()->hero_entity->transform->get_position();
 
 		flagsRef = flags;
 
@@ -173,7 +178,7 @@ void KillAllEntities()
 		}
 	}
 
-	if (entities_killed > 0 && input_mgr::get_current_input_type() == E_INPUT_MANAGER_TYPE::E_XINPUT)
+	if (entities_killed > 0 && input_mgr::get_current_input_type() == E_INPUT_MANAGER_TYPE::XINPUT)
 	{
 		const WORD vibration_strength = static_cast<WORD>(entities_killed * 2500);
 		xenon_input_mgr::gamepad_vibrate(vibration_strength, vibration_strength, std::chrono::seconds(1));
@@ -188,7 +193,7 @@ void TeleportAllEntitiesToMe()
 		entity* const current_entity = node->base->entity;
 		if (current_entity != hero)
 		{
-			current_entity->set_rel_position(hero->transform->position);
+			current_entity->set_rel_position(hero->transform->get_position());
 		}
 	}
 }
@@ -206,7 +211,7 @@ void TeleportToNearestEntity()
 			entity_health_data* const health_data = current_entity->get_health_data();
 			if (health_data->health > health_data->min_health)
 			{
-				const float dist = vector3d::distance(hero->transform->position, current_entity->transform->position);
+				const float dist = vector3d::distance(hero->transform->get_position(), current_entity->transform->get_position());
 				if (dist < min_dist)
 				{
 					target = current_entity;
@@ -217,7 +222,7 @@ void TeleportToNearestEntity()
 	}
 	if (target != nullptr)
 	{
-		world::inst()->set_hero_rel_position(target->transform->position);
+		world::inst()->set_hero_rel_position(target->transform->get_position());
 	}
 }
 
@@ -229,7 +234,7 @@ void TeleportAllPedestriansToMe()
 		entity* const current_entity = node->base->entity;
 		if (current_entity != hero)
 		{
-			current_entity->set_rel_position(hero->transform->position);
+			current_entity->set_rel_position(hero->transform->get_position());
 		}
 	}
 }
@@ -309,7 +314,8 @@ void LoadMissionScript(RHCheckpointScript* mission)
 		break;
 	}
 
-	const auto executeScript = [mission] {
+	const auto executeScript = [mission]
+	{
 		if (mission->has_delay)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));

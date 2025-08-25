@@ -13,8 +13,8 @@
 class xenon_input_mgr
 {
 private:
-	static XInputGetState_t m_XInputGetState;
-	static XInputSetState_t m_XInputSetState;
+	static XInputGetState_t const& m_XInputGetState;
+	static XInputSetState_t const& m_XInputSetState;
 	static DWORD m_xinput_status;
 	static XINPUT_STATE m_xinput_previous_state;
 	static XINPUT_STATE m_xinput_current_state;
@@ -29,21 +29,9 @@ private:
 	static ULONGLONG m_right_thumb_left_repeat;
 	static ULONGLONG m_vibration_time;
 
-	static FARPROC get_xinput_function(LPCSTR lpProcName);
 	static void vibrate_internal(const WORD& right_motor_strenght, const WORD& left_motor_strenght);
 	static bool ret_and_update_input_type(const bool& value);
 public:
-	/// <summary>
-	/// Initializes the input manager
-	/// </summary>
-	static void initialize();
-
-	/// <summary>
-	/// Checks if the input manager is initialized
-	/// </summary>
-	/// <returns>True if the input manager is initialized. Otherwise false</returns>
-	static bool is_initialized();
-	
 	/// <summary>
 	/// Updates the state of XInput
 	/// </summary>

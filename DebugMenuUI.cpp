@@ -73,7 +73,7 @@ void AddRegionToMenu(const std::shared_ptr<debug_menu_entry>& stripItem, region*
 	{
 		// remove accidental duplicates
 		// this is because some regions may have a prefix inside of their prefix
-		// for example, prefix "M" is inside the prefix "" 
+		// for example, prefix "MC" is inside the prefix "M" 
 
 		MenuRegionInfo& mri = s_MenuRegions[currentRegion];
 		std::vector<std::shared_ptr<debug_menu_entry>>* items = &mri.region_entry_parent->sublist->entries;
@@ -160,14 +160,21 @@ void UpdateWarpEntry()
 bool NGLMenuOnShow()
 {
 	if (!game::has_inst())
-		return false;
-
-	if (app::inst()->game_inst->paused)
 	{
 		return false;
 	}
 
-	game::inst()->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
+	const bool isFreecamPauseEnabled = s_DebugMenuToggles.Freecam && s_DebugMenuToggles.FreecamPause;
+
+	if (!isFreecamPauseEnabled)
+	{
+		if (app::inst()->game_inst->paused)
+		{
+			return false;
+		}
+
+		game::inst()->toggle_pause(DEBUG_MENU_PAUSE_TYPE);
+	}
 
 	UpdateGameTimeEntry();
 
@@ -184,8 +191,9 @@ bool NGLMenuOnShow()
 
 bool NGLMenuOnHide()
 {
+	const bool isFreecamPauseEnabled = s_DebugMenuToggles.Freecam && s_DebugMenuToggles.FreecamPause;
 	game* const g = app::inst()->game_inst;
-	if (g->paused)
+	if (g->paused && !isFreecamPauseEnabled)
 	{
 		if (g->pause_type == DEBUG_MENU_PAUSE_TYPE)
 		{
@@ -286,6 +294,7 @@ void CreateCameraEntry()
 		itoa(i, fovBuffer.get(), 10);
 		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer.get(), nullptr, nullptr);
 	}
+
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Alternative Angles in Cutscenes", &s_DebugMenuToggles.bAlternativeCutsceneAngles, nullptr);
@@ -295,6 +304,11 @@ void CreateCameraEntry()
 		const char* mode = s_CameraModes[i];
 		s_CameraModeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mode, &SetCameraMode, nullptr);
 	}
+
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam", &s_DebugMenuToggles.Freecam, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam Pause", &s_DebugMenuToggles.FreecamPause, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "TP Hero To Camera", &TeleportToCamera, nullptr);
+
 }
 
 void CreateMissionManagerEntry()
@@ -409,7 +423,7 @@ void UpdateHeroPositionLabel()
 {
 	if (s_HeroPositionLabel != nullptr)
 	{
-		const vector3d& pos = world::inst()->hero_entity->transform->position;
+		const vector3d& pos = world::inst()->hero_entity->transform->get_position();
 		sprintf(s_HeroPositionLabel->text, "Position: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
 	}
 }

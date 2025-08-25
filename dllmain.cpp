@@ -18,6 +18,12 @@
 #include "game/plr_loco_standing_state.hpp"
 
 #include "DebugMenuUI.hpp"
+#include "RegionUtils.hpp"
+#include "FreecamController.hpp"
+
+#include <dinput.h>
+#pragma comment(lib, "dinput8.lib")
+#pragma comment(lib, "dxguid.lib")
 
 typedef int (*nglPresent_t)(void);
 static nglPresent_t original_nglPresent;
@@ -48,12 +54,48 @@ int nglPresent_Hook(void)
 	return original_nglPresent();
 }
 
+struct transform_matrix_hooks : transform_matrix
+{
+	static const uintptr_t UPDATE_CAMERA_TRANSFORM_ADDRESS = 0x8A2780;
+
+	typedef void(__thiscall* transform_matrix__update_camera_transform_t)(transform_matrix*, camera*);
+	static transform_matrix__update_camera_transform_t original_transform_matrix__update_camera_transform;
+
+	void update_camera_transform(camera* dest)
+	{
+		if (s_DebugMenu != nullptr && s_DebugMenu->is_open())
+		{
+			return;
+		}
+
+		bool isPaused = game::has_inst() && game::inst()->paused;
+
+		if (s_DebugMenuToggles.Freecam && !s_DebugMenuToggles.FreecamPause && isPaused)
+		{
+			return;
+		}
+
+		if (s_DebugMenuToggles.Freecam && game::has_inst() && dest == game::inst()->spider_camera)
+		{
+			HandleFreecam(this, dest);
+		}
+
+		original_transform_matrix__update_camera_transform(this, dest);
+	}
+};
+
+transform_matrix_hooks::transform_matrix__update_camera_transform_t transform_matrix_hooks::original_transform_matrix__update_camera_transform;
+
 struct app_hooks
 {
 	static const uintptr_t ON_UPDATE_ADDRESS = 0x545F00;
+	static const uintptr_t HANDLE_INPUT_ADDRESS = 0x41C490;
 
 	typedef void(__fastcall* app__on_update_t)(app*);
 	static app__on_update_t original_app__on_update;
+
+	typedef void (*app__handle_input_t)(void);
+	static app__handle_input_t original_app__handle_input;
 
 	static void __fastcall on_update(app* _this)
 	{
@@ -64,6 +106,9 @@ struct app_hooks
 				s_DebugMenu->execute_current_callback();
 				s_DebugMenu->reset_current_callback();
 			}
+
+			input_mgr::update();
+			xenon_input_mgr::update_state();
 
 			dev_opts::show_perf_info = s_DebugMenuToggles.bShowStats;
 			if (!_this->game_inst->paused)
@@ -102,11 +147,30 @@ struct app_hooks
 				app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_MIN_FOV + s_FovSlider->sublist->selected_entry_index);
 			}
 		}
+
 		original_app__on_update(_this);
+	}
+
+	static void handle_input()
+	{
+		if (s_DebugMenu != nullptr && s_DebugMenu->is_open())
+		{
+			return;
+		}
+
+		bool isPaused = game::has_inst() && game::inst()->paused;
+
+		if (s_DebugMenuToggles.Freecam && !s_DebugMenuToggles.FreecamPause && !isPaused)
+		{
+			return;
+		}
+
+		original_app__handle_input();
 	}
 };
 
 app_hooks::app__on_update_t app_hooks::original_app__on_update;
+app_hooks::app__handle_input_t app_hooks::original_app__handle_input;
 
 struct mission_manager_hooks : mission_manager
 {
@@ -238,6 +302,13 @@ void StartThread(HANDLE mainThread)
 
 	original_load_scene_animation = reinterpret_cast<load_scene_animation_t>(LOAD_SCENE_ANIMATION_ADDRESS);
 	DetourAttach(&reinterpret_cast<PVOID&>(original_load_scene_animation), &load_scene_animation_hook);
+
+	transform_matrix_hooks::original_transform_matrix__update_camera_transform = reinterpret_cast<transform_matrix_hooks::transform_matrix__update_camera_transform_t>(transform_matrix_hooks::UPDATE_CAMERA_TRANSFORM_ADDRESS);
+	auto ptrUpdateTransform = &transform_matrix_hooks::update_camera_transform;
+	DetourAttach(&reinterpret_cast<PVOID&>(transform_matrix_hooks::original_transform_matrix__update_camera_transform), reinterpret_cast<const PVOID&>(ptrUpdateTransform));
+
+	app_hooks::original_app__handle_input = reinterpret_cast<app_hooks::app__handle_input_t>(app_hooks::HANDLE_INPUT_ADDRESS);
+	DetourAttach(&reinterpret_cast<PVOID&>(app_hooks::original_app__handle_input), app_hooks::handle_input);
 
 	DetourTransactionCommit();
 }

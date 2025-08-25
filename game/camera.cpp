@@ -1,6 +1,7 @@
 #include "camera.hpp"
 
 float& camera::s_fov = * reinterpret_cast<float*>(0xD18C50);
+// D18C64
 
 int camera::get_fov() const
 {

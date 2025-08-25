@@ -9,6 +9,7 @@ void SpawnToPoint(size_t idx);
 void FullHealth();
 void UnlockAllUpgrades();
 void KillHero();
+void TeleportToCamera();
 void FailCurrentMission();
 void CompleteCurrentMission();
 void AbortCurrentMission();

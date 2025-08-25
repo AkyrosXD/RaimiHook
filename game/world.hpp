@@ -11,7 +11,14 @@
 class world : public singleton<world, 0x10CFEF0>
 {
 private:
-	char unk[532];
+	char unk1[224];
+public:
+	/// <summary>
+	/// Transform matrix of the current camera
+	/// </summary>
+	transform_matrix camera_transform;
+private:
+	char unk2[244];
 public:
 	/// <summary>
 	/// Current hero entity

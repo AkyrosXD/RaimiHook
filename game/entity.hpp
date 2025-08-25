@@ -6,6 +6,7 @@
 #include "singleton.hpp"
 #include "numerics.hpp"
 #include "player_interface.hpp"
+#include "transform_matrix.hpp"
 
 #define ENTIY_DATA_ID_HEALTH 0
 #define ENTIY_DATA_ID_INTERFACE 11
@@ -60,21 +61,6 @@ public:
 
 #pragma pack(push, 1)
 /// <summary>
-/// Entity transform properties struct
-/// </summary>
-struct entity_transform
-{
-	float rotation_matrix[12];
-
-	/// <summary>
-	/// The world position of the entity
-	/// </summary>
-	vector3d position;
-};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-/// <summary>
 /// Entity class
 /// </summary>
 class entity
@@ -85,7 +71,7 @@ public:
 	/// <summary>
 	/// Transform properties
 	/// </summary>
-	entity_transform* transform;
+	transform_matrix* transform;
 public:
 	E_ENTITY_COLLIDER_FLAGS collider_flags;
 private:

@@ -1,7 +1,7 @@
 #include "xenon_input_mgr.hpp"
 
-XInputGetState_t xenon_input_mgr::m_XInputGetState;
-XInputSetState_t xenon_input_mgr::m_XInputSetState;
+XInputGetState_t const& xenon_input_mgr::m_XInputGetState = *reinterpret_cast<XInputGetState_t*>(0x01151568);
+XInputSetState_t const& xenon_input_mgr::m_XInputSetState = *reinterpret_cast<XInputSetState_t*>(0x0115156C);
 DWORD xenon_input_mgr::m_xinput_status;
 XINPUT_STATE xenon_input_mgr::m_xinput_previous_state = {};
 XINPUT_STATE xenon_input_mgr::m_xinput_current_state = {};
@@ -19,16 +19,6 @@ ULONGLONG xenon_input_mgr::m_vibration_time;
 #define XENON_INPUT_MGR_THUMB_THRESHOLD 0x6000
 #define XENON_INPUT_MGR_REPEAT_RATE_TICKS 500
 
-FARPROC xenon_input_mgr::get_xinput_function(LPCSTR lpProcName)
-{
-	const HMODULE xinput_module = GetModuleHandleA(XINPUT_MODULE);
-	if (xinput_module == nullptr)
-	{
-		return nullptr;
-	}
-	return GetProcAddress(xinput_module, lpProcName);
-}
-
 void xenon_input_mgr::vibrate_internal(const WORD& right_motor_strenght, const WORD& left_motor_strenght)
 {
 	XINPUT_VIBRATION vibration;
@@ -42,31 +32,14 @@ bool xenon_input_mgr::ret_and_update_input_type(const bool& value)
 {
 	if (value)
 	{
-		input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::E_XINPUT);
+		input_mgr::set_current_input_type(E_INPUT_MANAGER_TYPE::XINPUT);
 	}
 
 	return value;
 }
 
-void xenon_input_mgr::initialize()
-{
-	m_XInputGetState = (XInputGetState_t)get_xinput_function("XInputGetState");
-	m_XInputSetState = (XInputSetState_t)get_xinput_function("XInputSetState");
-}
-
-bool xenon_input_mgr::is_initialized()
-{
-	return m_XInputGetState != nullptr;
-}
-
 void xenon_input_mgr::update_state()
 {
-	if (!is_initialized())
-	{
-		throw std::runtime_error("xenon_input_mgr has not been initalized!");
-		return;
-	}
-
 	m_xinput_previous_state = m_xinput_current_state;
 	m_xinput_status = m_XInputGetState(0, &m_xinput_current_state);
 

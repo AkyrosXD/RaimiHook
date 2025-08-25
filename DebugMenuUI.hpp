@@ -6,7 +6,7 @@
 
 #define RAIMIHOOK_VER_STR NGL_TEXT_WITH_COLOR("RaimiHook Version: 12 [DEV]", "DB7D09FF")
 
-#define DEBUG_MENU_PAUSE_TYPE 5
+#define DEBUG_MENU_PAUSE_TYPE 8
 
 struct DebugMenuToggles
 {
@@ -22,6 +22,8 @@ struct DebugMenuToggles
 	bool bInfiniteCombo = false;
 	bool bInstantKill = false;
 	bool bAlternativeCutsceneAngles = false;
+	bool Freecam = false;
+	bool FreecamPause = false;
 };
 
 static const char* s_Heroes[] =

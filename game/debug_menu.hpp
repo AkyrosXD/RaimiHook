@@ -277,7 +277,6 @@ private:
 	int m_down_arrow_height;
 	int m_up_arrow_width;
 	int m_up_arrow_height;
-	float last_input_time;
 	nglWindow m_ngl_box_data;
 	std::shared_ptr<debug_menu_entry_list> m_default_entry_list;
 	std::shared_ptr<debug_menu_entry_list> m_current_entry_list;
