@@ -127,15 +127,11 @@ void HandleFreecam(transform_matrix* matrix, camera* target)
 		{ 0, 0, 0 }
 	};
 
-	switch (input_mgr::get_current_input_type())
-	{
-		case E_INPUT_MANAGER_TYPE::MOUSEKYBOARD:
-			HandleKeyboard(params);
-			break;
+	HandleKeyboard(params);
 
-		case E_INPUT_MANAGER_TYPE::XINPUT:
-			HandleXInput(params);
-			break;
+	if (xenon_input_mgr::get_status() == ERROR_SUCCESS)
+	{
+		HandleXInput(params);
 	}
 
 	transform_matrix newMatrix = *matrix;

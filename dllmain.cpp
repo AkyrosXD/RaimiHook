@@ -111,18 +111,19 @@ struct app_hooks
 			xenon_input_mgr::update_state();
 
 			dev_opts::show_perf_info = s_DebugMenuToggles.bShowStats;
+
+			if (s_DebugMenuToggles.bUnlockFPS && !s_DebugMenu->is_open())
+			{
+				app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
+			}
+			else
+			{
+				app::fixed_delta_time = SM3_FIXED_DELTA_TIME;
+			}
+
 			if (!_this->game_inst->paused)
 			{
 				dev_opts::god_mode = s_DebugMenuToggles.bGodMode;
-
-				if (s_DebugMenuToggles.bUnlockFPS)
-				{
-					app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
-				}
-				else
-				{
-					app::fixed_delta_time = SM3_FIXED_DELTA_TIME;
-				}
 
 				goblin_player_interface::is_boosting &= !s_DebugMenuToggles.bNewGoblinBoost;
 				slf::peds_set_peds_enabled(!s_DebugMenuToggles.bDisablePedestrians);

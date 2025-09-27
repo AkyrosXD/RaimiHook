@@ -415,7 +415,7 @@ void UpdateXInputStatusLabel()
 {
 	if (s_XInputStatusLabel != nullptr)
 	{
-		sprintf(s_XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status());
+		sprintf(s_XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status_str());
 	}
 }
 

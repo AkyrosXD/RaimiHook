@@ -72,7 +72,10 @@ public:
 	/// Transform properties
 	/// </summary>
 	transform_matrix* transform;
-public:
+
+	/// <summary>
+	/// Entity collider flags
+	/// </summary>
 	E_ENTITY_COLLIDER_FLAGS collider_flags;
 private:
 	char unk1[4];

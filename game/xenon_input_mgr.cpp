@@ -237,7 +237,12 @@ bool xenon_input_mgr::right_thumb_left_repeat()
 	return false;
 }
 
-const char* xenon_input_mgr::get_status()
+DWORD xenon_input_mgr::get_status()
+{
+	return m_xinput_status;
+}
+
+const char* xenon_input_mgr::get_status_str()
 {
 	switch (m_xinput_status)
 	{

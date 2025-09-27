@@ -210,5 +210,11 @@ public:
 	/// Gets the current XInput status
 	/// </summary>
 	/// <returns>The current XInput status as a string</returns>
-	static const char* get_status();
+	static DWORD get_status();
+
+	/// <summary>
+	/// Gets the current XInput status
+	/// </summary>
+	/// <returns>The current XInput status as a string</returns>
+	static const char* get_status_str();
 };

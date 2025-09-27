@@ -60,6 +60,15 @@ static void initialize()
 	initilize_device(keyboard_device, GUID_SysKeyboard, &c_dfDIKeyboard);
 }
 
+static void update_keyboard_state()
+{
+	const HRESULT hr = keyboard_device->GetDeviceState(sizeof(keyboard_keys), &keyboard_keys);
+	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED)
+	{
+		keyboard_device->Acquire();
+	}
+}
+
 void input_mgr::update()
 {
 	// Initialize the input manager
@@ -69,11 +78,7 @@ void input_mgr::update()
 		initialized = true;
 	}
 
-	const HRESULT hr = keyboard_device->GetDeviceState(sizeof(keyboard_keys), &keyboard_keys);
-	if (hr == DIERR_INPUTLOST || hr == DIERR_NOTACQUIRED)
-	{
-		keyboard_device->Acquire();
-	}
+	update_keyboard_state();
 }
 
 bool input_mgr::is_key_pressed(const int& key)
