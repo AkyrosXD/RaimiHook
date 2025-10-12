@@ -5,6 +5,7 @@
 
 #define SM3_FIXED_DELTA_TIME 0.033333335f
 #define SM3_MIN_FIXED_DELTA_TIME 0.0000001f
+#define SM3_DEFAULT_TIME_SCALE_DENOMINATOR 10000
 
 #pragma pack(push, 1)
 /// <summary>
@@ -16,7 +17,7 @@ private:
 	void* unk1, *unk2, *unk3;
 public:
 	/// <summary>
-	/// same as game::inst()
+	/// Same as game::inst()
 	/// </summary>
 	game* game_inst;
 
@@ -29,6 +30,12 @@ public:
 	/// The fixed delta time of the game's engine
 	/// </summary>
 	static float& fixed_delta_time;
+
+	/// <summary>
+	/// Global time scale divisor.
+	/// Lower values speed up the entire game, while higher values slow it down. Audio and cutscnes are excluded.
+	/// </summary>
+	static float& time_scale_denominator;
 
 	/// <summary>
 	/// Gets the current delta time of the game

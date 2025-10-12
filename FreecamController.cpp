@@ -20,6 +20,7 @@ struct FreecamControllerParameters
 static void HandleKeyboard(FreecamControllerParameters& params)
 {
 	const float dt = app::get_delta_time();
+	const float ts = SM3_DEFAULT_TIME_SCALE_DENOMINATOR / app::time_scale_denominator;
 
 	float moveSpeed = KEYBOARD_DEFAULT_MOVEMENT_SPEED;
 	float rotationSpeed = KEYBOARD_DEFAULT_ROTATION_SPEED;
@@ -37,49 +38,50 @@ static void HandleKeyboard(FreecamControllerParameters& params)
 
 	if (input_mgr::is_key_pressed(DIK_LEFT))
 	{
-		params.yaw -= rotationSpeed * dt;
+		params.yaw -= (rotationSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_RIGHT))
 	{
-		params.yaw += rotationSpeed * dt;
+		params.yaw += (rotationSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_UP))
 	{
-		params.pitch += rotationSpeed * dt;
+		params.pitch += (rotationSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_DOWN))
 	{
-		params.pitch -= rotationSpeed * dt;
+		params.pitch -= (rotationSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_W))
 	{
-		params.translation.z += moveSpeed * dt;
+		params.translation.z += (moveSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_S))
 	{
-		params.translation.z -= moveSpeed * dt;
+		params.translation.z -= (moveSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_D))
 	{
-		params.translation.x += moveSpeed * dt;
+		params.translation.x += (moveSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_A))
 	{
-		params.translation.x -= moveSpeed * dt;
+		params.translation.x -= (moveSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_SPACE))
 	{
-		params.translation.y += moveSpeed * dt;
+		params.translation.y += (moveSpeed * dt) / ts;
 	}
 	if (input_mgr::is_key_pressed(DIK_LALT))
 	{
-		params.translation.y -= moveSpeed * dt;
+		params.translation.y -= (moveSpeed * dt) / ts;
 	}
 }
 
 static void HandleXInput(FreecamControllerParameters& params)
 {
 	const float dt = app::get_delta_time();
+	const float ts = SM3_DEFAULT_TIME_SCALE_DENOMINATOR / app::time_scale_denominator;
 
 	float moveSpeed = XINPUT_DEFAULT_MOVEMENT_SPEED;
 	float rotationSpeed = XINPUT_DEFAULT_ROTATION_SPEED;
@@ -99,22 +101,22 @@ static void HandleXInput(FreecamControllerParameters& params)
 
 	if (fabs(leftThumbX) > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 	{
-		params.translation.x += leftThumbX * moveSpeed * dt;
+		params.translation.x += (leftThumbX * moveSpeed * dt) / ts;
 	}
 
 	if (fabs(leftThumbY) > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
 	{
-		params.translation.z += leftThumbY * moveSpeed * dt;
+		params.translation.z += (leftThumbY * moveSpeed * dt) / ts;
 	}
 
 	if (fabs(rightThumbX) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE)
 	{
-		params.yaw += rightThumbX * rotationSpeed * dt;
+		params.yaw += (rightThumbX * rotationSpeed * dt) / ts;
 	}
 	
 	if (fabs(rightThumbY) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE)
 	{
-		params.pitch += rightThumbY * rotationSpeed * dt;
+		params.pitch += (rightThumbY * rotationSpeed * dt) / ts;
 	}
 }
 

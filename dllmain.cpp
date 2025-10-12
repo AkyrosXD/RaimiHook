@@ -18,6 +18,7 @@
 #include "game/plr_loco_standing_state.hpp"
 
 #include "DebugMenuUI.hpp"
+#include "DebugMenuFunctions.hpp"
 #include "RegionUtils.hpp"
 #include "FreecamController.hpp"
 
@@ -110,33 +111,39 @@ struct app_hooks
 			input_mgr::update();
 			xenon_input_mgr::update_state();
 
-			dev_opts::show_perf_info = s_DebugMenuToggles.bShowStats;
+			dev_opts::show_perf_info = s_DebugMenuToggles.ShowStats;
 
-			if (s_DebugMenuToggles.bUnlockFPS && !s_DebugMenu->is_open())
+			if (!s_DebugMenu->is_open())
 			{
-				app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
+				if (s_DebugMenuToggles.UnlockFPS)
+				{
+					app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
+				}
+
+				SetTimeScale();
 			}
 			else
 			{
 				app::fixed_delta_time = SM3_FIXED_DELTA_TIME;
+				app::time_scale_denominator = SM3_DEFAULT_TIME_SCALE_DENOMINATOR;
 			}
 
 			if (!_this->game_inst->paused)
 			{
-				dev_opts::god_mode = s_DebugMenuToggles.bGodMode;
+				dev_opts::god_mode = s_DebugMenuToggles.GodMode;
 
-				goblin_player_interface::is_boosting &= !s_DebugMenuToggles.bNewGoblinBoost;
-				slf::peds_set_peds_enabled(!s_DebugMenuToggles.bDisablePedestrians);
-				dev_opts::traffic_enabled = !s_DebugMenuToggles.bDisableTraffic;
-				dev_opts::instant_kill = s_DebugMenuToggles.bInstantKill;
+				goblin_player_interface::is_boosting &= !s_DebugMenuToggles.NewGoblinBoost;
+				slf::peds_set_peds_enabled(!s_DebugMenuToggles.DisablePedestrians);
+				dev_opts::traffic_enabled = !s_DebugMenuToggles.DisableTraffic;
+				dev_opts::instant_kill = s_DebugMenuToggles.InstantKill;
 
-				if (s_DebugMenuToggles.bInfiniteCombo && !mission_manager::inst()->playthrough_as_blacksuit() && !mission_manager::inst()->playthrough_as_goblin())
+				if (s_DebugMenuToggles.InfiniteCombo && !mission_manager::inst()->playthrough_as_blacksuit() && !mission_manager::inst()->playthrough_as_goblin())
 				{
 					spiderman_player_interface* const spi = world::inst()->hero_entity->get_interface<spiderman_player_interface>();
 					spi->combo_meter_current_value = spi->combo_meter_max_value;
 				}
 
-				if (s_DebugMenuToggles.bBlacksuitRage)
+				if (s_DebugMenuToggles.BlacksuitRage)
 				{
 					blacksuit_player_interface* const bpi = world::inst()->hero_entity->get_interface<blacksuit_player_interface>();
 					bpi->rage_meter_current_value = bpi->rage_meter_max_value;
@@ -243,7 +250,7 @@ struct IGOFrontEnd_hooks : IGOFrontEnd
 
 	int Draw()
 	{
-		if (s_DebugMenuToggles.bDisableInterface && !game::inst()->paused)
+		if (s_DebugMenuToggles.DisableInterface && !game::inst()->paused)
 			return 0;
 
 		return original_IGOFrontEnd__Draw(this);
@@ -260,7 +267,7 @@ void load_scene_animation_hook(DWORD a1, DWORD a2, DWORD a3, void* a4)
 {
 	const char* const entity_name = reinterpret_cast<const char*>(a2 + 4);
 
-	if (s_DebugMenuToggles.bAlternativeCutsceneAngles && strcmp(entity_name, "camera") == 0)
+	if (s_DebugMenuToggles.AlternativeCutsceneAngles && strcmp(entity_name, "camera") == 0)
 	{
 		return;
 	}
