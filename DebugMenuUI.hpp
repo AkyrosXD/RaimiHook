@@ -24,6 +24,7 @@ struct DebugMenuToggles
 	bool AlternativeCutsceneAngles = false;
 	bool Freecam = false;
 	bool FreecamPause = false;
+	bool ChangeFOV = false;
 };
 
 static const char* s_Heroes[] =

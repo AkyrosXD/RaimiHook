@@ -306,6 +306,8 @@ static void CreateCameraEntry()
 		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer.get(), nullptr, nullptr);
 	}
 
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Change FOV", &s_DebugMenuToggles.ChangeFOV, nullptr);
+
 	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Alternative Angles in Cutscenes", &s_DebugMenuToggles.AlternativeCutsceneAngles, nullptr);

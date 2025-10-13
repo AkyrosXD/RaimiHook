@@ -97,7 +97,11 @@ void SetCameraFovDefault()
 {
 	if (!player_interface::is_photo_mode)
 	{
-		app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_DEFAULT_FOV);
+		if (s_DebugMenuToggles.ChangeFOV)
+		{
+			app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_DEFAULT_FOV);
+		}
+
 		if (s_FovSlider != nullptr && s_FovSlider->sublist->size() > SM3_CAMERA_DEFAULT_FOV)
 		{
 			s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;

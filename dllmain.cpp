@@ -150,7 +150,7 @@ struct app_hooks
 				}
 			}
 
-			if (s_FovSlider != nullptr && !player_interface::is_photo_mode)
+			if (s_FovSlider != nullptr && !player_interface::is_photo_mode && s_DebugMenuToggles.ChangeFOV)
 			{
 				app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_MIN_FOV + s_FovSlider->sublist->selected_entry_index);
 			}
