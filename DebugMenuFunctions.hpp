@@ -21,8 +21,6 @@ void SetTimerTime();
 void SetTimerColor();
 void SetCameraMode();
 void SetHeroColliderFlags(E_ENTITY_COLLIDER_FLAGS flags);
-void SetTimeScale();
-void SetPerfInfo();
 void KillAllEntities();
 void TeleportAllEntitiesToMe();
 void TeleportToNearestEntity();

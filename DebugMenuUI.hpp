@@ -8,8 +8,9 @@
 
 #define DEBUG_MENU_PAUSE_TYPE 8
 
-struct DebugMenuToggles
+struct DebugMenuEntries
 {
+	// Toggles
 	bool GodMode = false;
 	bool UnlockFPS = false;
 	bool NewGoblinBoost = false;
@@ -25,6 +26,23 @@ struct DebugMenuToggles
 	bool FreecamPause = false;
 	bool ChangeFOV = false;
 	bool ShowBenchmarkingInfo = false;
+
+	// Other entries
+	std::shared_ptr<debug_menu_entry> GameTimeSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> GlassHouseLevelSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> WarpButton = nullptr;
+	std::shared_ptr<debug_menu_entry> CameraModeSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> FovSlider = nullptr;
+	std::shared_ptr<debug_menu_entry> XInputStatusLabel = nullptr;
+	std::shared_ptr<debug_menu_entry> MovementSpeedSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> CurrentTimerMinutesSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> CurrentTimerSecondsSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> CurrentTimerRSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> CurrentTimerGSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> CurrentTimerBSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> HeroPositionLabel = nullptr;
+	std::shared_ptr<debug_menu_entry> TimeScaleSelect = nullptr;
+	std::shared_ptr<debug_menu_entry> PerfInfoSelect = nullptr;
 };
 
 static const char* s_Heroes[] =
@@ -105,23 +123,7 @@ static const float s_TimeScaleOptions[] =
 };
 
 extern std::shared_ptr<debug_menu> s_DebugMenu;
-extern std::shared_ptr<debug_menu_entry> s_GameTimeSelect;
-extern std::shared_ptr<debug_menu_entry> s_GlassHouseLevelSelect;
-extern std::shared_ptr<debug_menu_entry> s_WarpButton;
-extern std::shared_ptr<debug_menu_entry> s_CameraModeSelect;
-extern std::shared_ptr<debug_menu_entry> s_FovSlider;
-extern std::shared_ptr<debug_menu_entry> s_XInputStatusLabel;
-extern std::shared_ptr<debug_menu_entry> s_MovementSpeedSelect;
-extern std::shared_ptr<debug_menu_entry> s_CurrentTimerMinutesSelect;
-extern std::shared_ptr<debug_menu_entry> s_CurrentTimerSecondsSelect;
-extern std::shared_ptr<debug_menu_entry> s_CurrentTimerRSelect;
-extern std::shared_ptr<debug_menu_entry> s_CurrentTimerGSelect;
-extern std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect;
-extern std::shared_ptr<debug_menu_entry> s_HeroPositionLabel;
-extern std::shared_ptr<debug_menu_entry> s_TimeScaleSelect;
-extern std::shared_ptr<debug_menu_entry> s_PerfInfoSelect;
-
-extern DebugMenuToggles s_DebugMenuToggles;
+extern DebugMenuEntries s_DebugMenuEntries;
 
 void CreateDebugMenu();
 void UpdateDebugMenuInfoLabels();

@@ -18,7 +18,6 @@
 #include "game/plr_loco_standing_state.hpp"
 
 #include "DebugMenuUI.hpp"
-#include "DebugMenuFunctions.hpp"
 #include "RegionUtils.hpp"
 #include "FreecamController.hpp"
 
@@ -71,12 +70,12 @@ struct transform_matrix_hooks : transform_matrix
 
 		bool isPaused = game::has_inst() && game::inst()->paused;
 
-		if (s_DebugMenuToggles.Freecam && !s_DebugMenuToggles.FreecamPause && isPaused)
+		if (s_DebugMenuEntries.Freecam && !s_DebugMenuEntries.FreecamPause && isPaused)
 		{
 			return;
 		}
 
-		if (s_DebugMenuToggles.Freecam && game::has_inst() && dest == game::inst()->spider_camera)
+		if (s_DebugMenuEntries.Freecam && game::has_inst() && dest == game::inst()->spider_camera)
 		{
 			HandleFreecam(this, dest);
 		}
@@ -111,17 +110,18 @@ struct app_hooks
 			input_mgr::update();
 			xenon_input_mgr::update_state();
 
-			SetPerfInfo();
-			dev_opts::show_benchmarking_info = s_DebugMenuToggles.ShowBenchmarkingInfo && !s_DebugMenu->is_open(); // info gets drawn above the debug menu
+			dev_opts::show_perf_info = static_cast<unsigned char>(s_DebugMenuEntries.PerfInfoSelect->sublist->selected_entry_index);
+			dev_opts::show_benchmarking_info = s_DebugMenuEntries.ShowBenchmarkingInfo && !s_DebugMenu->is_open(); // info gets drawn above the debug menu
 
 			if (!s_DebugMenu->is_open())
 			{
-				if (s_DebugMenuToggles.UnlockFPS)
+				if (s_DebugMenuEntries.UnlockFPS)
 				{
 					app::fixed_delta_time = SM3_MIN_FIXED_DELTA_TIME;
 				}
 
-				SetTimeScale();
+				const float selectedScale = s_TimeScaleOptions[s_DebugMenuEntries.TimeScaleSelect->sublist->selected_entry_index];
+				app::time_scale_denominator = SM3_DEFAULT_TIME_SCALE_DENOMINATOR / selectedScale;
 			}
 			else
 			{
@@ -131,29 +131,29 @@ struct app_hooks
 
 			if (!_this->game_inst->paused)
 			{
-				dev_opts::god_mode = s_DebugMenuToggles.GodMode;
+				dev_opts::god_mode = s_DebugMenuEntries.GodMode;
 
-				goblin_player_interface::is_boosting &= !s_DebugMenuToggles.NewGoblinBoost;
-				slf::peds_set_peds_enabled(!s_DebugMenuToggles.DisablePedestrians);
-				dev_opts::traffic_enabled = !s_DebugMenuToggles.DisableTraffic;
-				dev_opts::instant_kill = s_DebugMenuToggles.InstantKill;
+				goblin_player_interface::is_boosting &= !s_DebugMenuEntries.NewGoblinBoost;
+				slf::peds_set_peds_enabled(!s_DebugMenuEntries.DisablePedestrians);
+				dev_opts::traffic_enabled = !s_DebugMenuEntries.DisableTraffic;
+				dev_opts::instant_kill = s_DebugMenuEntries.InstantKill;
 
-				if (s_DebugMenuToggles.InfiniteCombo && !mission_manager::inst()->playthrough_as_blacksuit() && !mission_manager::inst()->playthrough_as_goblin())
+				if (s_DebugMenuEntries.InfiniteCombo && !mission_manager::inst()->playthrough_as_blacksuit() && !mission_manager::inst()->playthrough_as_goblin())
 				{
 					spiderman_player_interface* const spi = world::inst()->hero_entity->get_interface<spiderman_player_interface>();
 					spi->combo_meter_current_value = spi->combo_meter_max_value;
 				}
 
-				if (s_DebugMenuToggles.BlacksuitRage)
+				if (s_DebugMenuEntries.BlacksuitRage)
 				{
 					blacksuit_player_interface* const bpi = world::inst()->hero_entity->get_interface<blacksuit_player_interface>();
 					bpi->rage_meter_current_value = bpi->rage_meter_max_value;
 				}
 			}
 
-			if (s_FovSlider != nullptr && !player_interface::is_photo_mode && s_DebugMenuToggles.ChangeFOV)
+			if (s_DebugMenuEntries.FovSlider != nullptr && !player_interface::is_photo_mode && s_DebugMenuEntries.ChangeFOV)
 			{
-				app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_MIN_FOV + s_FovSlider->sublist->selected_entry_index);
+				_this->game_inst->spider_camera->set_fov(SM3_CAMERA_MIN_FOV + s_DebugMenuEntries.FovSlider->sublist->selected_entry_index);
 			}
 		}
 
@@ -169,7 +169,7 @@ struct app_hooks
 
 		bool isPaused = game::has_inst() && game::inst()->paused;
 
-		if (s_DebugMenuToggles.Freecam && !s_DebugMenuToggles.FreecamPause && !isPaused)
+		if (s_DebugMenuEntries.Freecam && !s_DebugMenuEntries.FreecamPause && !isPaused)
 		{
 			return;
 		}
@@ -231,9 +231,9 @@ struct plr_loco_standing_state_hooks
 	{
 		const int result = original_plr_loco_standing_state__update(_this, a2);
 
-		if (s_MovementSpeedSelect != nullptr)
+		if (s_DebugMenuEntries.MovementSpeedSelect != nullptr)
 		{
-			_this->movement_speed = s_MovementSpeeds[s_MovementSpeedSelect->sublist->selected_entry_index];
+			_this->movement_speed = s_MovementSpeeds[s_DebugMenuEntries.MovementSpeedSelect->sublist->selected_entry_index];
 		}
 
 		return result;
@@ -251,7 +251,7 @@ struct IGOFrontEnd_hooks : IGOFrontEnd
 
 	int Draw()
 	{
-		if (s_DebugMenuToggles.DisableInterface && !game::inst()->paused)
+		if (s_DebugMenuEntries.DisableInterface && !game::inst()->paused)
 			return 0;
 
 		return original_IGOFrontEnd__Draw(this);
@@ -268,7 +268,7 @@ void load_scene_animation_hook(DWORD a1, DWORD a2, DWORD a3, void* a4)
 {
 	const char* const entity_name = reinterpret_cast<const char*>(a2 + 4);
 
-	if (s_DebugMenuToggles.AlternativeCutsceneAngles && strcmp(entity_name, "camera") == 0)
+	if (s_DebugMenuEntries.AlternativeCutsceneAngles && strcmp(entity_name, "camera") == 0)
 	{
 		return;
 	}
@@ -322,7 +322,7 @@ void StartThread(HANDLE mainThread)
 	DetourTransactionCommit();
 }
 
-bool IsGameCompatible()
+static bool IsGameCompatible()
 {
 	MODULEINFO info;
 	HMODULE const base = GetModuleHandleA(0);

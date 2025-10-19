@@ -98,14 +98,14 @@ void SetCameraFovDefault()
 {
 	if (!player_interface::is_photo_mode)
 	{
-		if (s_DebugMenuToggles.ChangeFOV)
+		if (s_DebugMenuEntries.ChangeFOV)
 		{
 			app::inst()->game_inst->spider_camera->set_fov(SM3_CAMERA_DEFAULT_FOV);
 		}
 
-		if (s_FovSlider != nullptr && s_FovSlider->sublist->size() > SM3_CAMERA_DEFAULT_FOV)
+		if (s_DebugMenuEntries.FovSlider != nullptr && s_DebugMenuEntries.FovSlider->sublist->size() > SM3_CAMERA_DEFAULT_FOV)
 		{
-			s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+			s_DebugMenuEntries.FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 		}
 	}
 }
@@ -123,14 +123,14 @@ void HideTimer()
 void SetTimerTime()
 {
 	g_femanager->IGO->TimerWidget->SetVisible(true);
-	g_femanager->IGO->TimerWidget->Seconds = static_cast<float>(((s_CurrentTimerMinutesSelect->sublist->selected_entry_index * 60) + (s_CurrentTimerSecondsSelect->sublist->selected_entry_index)));
+	g_femanager->IGO->TimerWidget->Seconds = static_cast<float>(((s_DebugMenuEntries.CurrentTimerMinutesSelect->sublist->selected_entry_index * 60) + (s_DebugMenuEntries.CurrentTimerSecondsSelect->sublist->selected_entry_index)));
 }
 
 void SetTimerColor()
 {
-	const int r = s_CurrentTimerRSelect->sublist->selected_entry_index;
-	const int g = s_CurrentTimerGSelect->sublist->selected_entry_index;
-	const int b = s_CurrentTimerBSelect->sublist->selected_entry_index;
+	const int r = s_DebugMenuEntries.CurrentTimerRSelect->sublist->selected_entry_index;
+	const int g = s_DebugMenuEntries.CurrentTimerGSelect->sublist->selected_entry_index;
+	const int b = s_DebugMenuEntries.CurrentTimerBSelect->sublist->selected_entry_index;
 	const int color = RGBA_TO_INT(r, g, b, 255);
 	g_femanager->IGO->TimerWidget->SetVisible(true);
 	g_femanager->IGO->TimerWidget->SetColor(color, 0.0f);
@@ -140,7 +140,7 @@ void SetCameraMode()
 {
 	if (game::has_inst())
 	{
-		game::inst()->camera_settings->is_user_mode = static_cast<bool>(s_CameraModeSelect->sublist->selected_entry_index);
+		game::inst()->camera_settings->is_user_mode = static_cast<bool>(s_DebugMenuEntries.CameraModeSelect->sublist->selected_entry_index);
 	}
 }
 
@@ -338,15 +338,4 @@ void LoadMissionScript(RHCheckpointScript* mission)
 	};
 
 	mission->has_delay ? std::thread(executeScript).detach() : executeScript();
-}
-
-void SetTimeScale()
-{
-	const float selectedScale = s_TimeScaleOptions[s_TimeScaleSelect->sublist->selected_entry_index];
-	app::time_scale_denominator = SM3_DEFAULT_TIME_SCALE_DENOMINATOR / selectedScale;
-}
-
-void SetPerfInfo()
-{
-	dev_opts::show_perf_info = static_cast<unsigned char>(s_PerfInfoSelect->sublist->selected_entry_index);
 }

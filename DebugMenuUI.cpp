@@ -21,23 +21,8 @@
 #define TIME_SCALE_MAX_CHAR 6
 
 std::shared_ptr<debug_menu> s_DebugMenu = nullptr;
-std::shared_ptr<debug_menu_entry> s_GameTimeSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_GlassHouseLevelSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_WarpButton = nullptr;
-std::shared_ptr<debug_menu_entry> s_CameraModeSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_FovSlider = nullptr;
-std::shared_ptr<debug_menu_entry> s_XInputStatusLabel = nullptr;
-std::shared_ptr<debug_menu_entry> s_MovementSpeedSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_CurrentTimerMinutesSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_CurrentTimerSecondsSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_CurrentTimerRSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_CurrentTimerGSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_HeroPositionLabel = nullptr;
-std::shared_ptr<debug_menu_entry> s_TimeScaleSelect = nullptr;
-std::shared_ptr<debug_menu_entry> s_PerfInfoSelect = nullptr;
 
-DebugMenuToggles s_DebugMenuToggles;
+DebugMenuEntries s_DebugMenuEntries;
 
 static void SortRegionStripItem(const std::shared_ptr<debug_menu_entry>& stripItem)
 {
@@ -95,7 +80,7 @@ static void CreateMenuRegionStrip(region* allRegions, MenuRegionStrip& rs)
 {
 	const std::shared_ptr<char> fullName = std::shared_ptr<char>(new char[REGION_FULL_NAME_MAX_CHAR]);
 	sprintf(fullName.get(), "MEGACITY_STRIP_%s", rs.name);
-	const std::shared_ptr<debug_menu_entry> stripItem = s_WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName.get(), nullptr, nullptr);
+	const std::shared_ptr<debug_menu_entry> stripItem = s_DebugMenuEntries.WarpButton->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, fullName.get(), nullptr, nullptr);
 	rs.name_length = strlen(rs.name);
 
 	for (size_t j = 0; j < SM3_REGIONS_COUNT; j++)
@@ -112,44 +97,44 @@ static void CreateMenuRegionStrip(region* allRegions, MenuRegionStrip& rs)
 
 static void UpdateGameTimeEntry()
 {
-	if (s_GameTimeSelect != nullptr && !s_GameTimeSelect->sublist->empty() && mission_manager::has_inst())
+	if (s_DebugMenuEntries.GameTimeSelect != nullptr && !s_DebugMenuEntries.GameTimeSelect->sublist->empty() && mission_manager::has_inst())
 	{
 		const DWORD hours = mission_manager::inst()->get_world_time().hours;
-		s_GameTimeSelect->sublist->selected_entry_index = hours;
+		s_DebugMenuEntries.GameTimeSelect->sublist->selected_entry_index = hours;
 	}
 }
 
 static void UpdateGlassHouseLevelEntry()
 {
-	if (s_GlassHouseLevelSelect != nullptr && !s_GlassHouseLevelSelect->sublist->empty())
+	if (s_DebugMenuEntries.GlassHouseLevelSelect != nullptr && !s_DebugMenuEntries.GlassHouseLevelSelect->sublist->empty())
 	{
 		const int glassHouseLevel = slf::get_glass_house_level();
-		s_GlassHouseLevelSelect->sublist->selected_entry_index = (glassHouseLevel + 1) * (glassHouseLevel < 2 && glassHouseLevel > -2);
+		s_DebugMenuEntries.GlassHouseLevelSelect->sublist->selected_entry_index = (glassHouseLevel + 1) * (glassHouseLevel < 2 && glassHouseLevel > -2);
 	}
 }
 
 static void UpdateTimerEntry()
 {
-	if (s_CurrentTimerMinutesSelect != nullptr && !s_CurrentTimerMinutesSelect->sublist->empty()
-		&& s_CurrentTimerSecondsSelect != nullptr && !s_CurrentTimerSecondsSelect->sublist->empty())
+	if (s_DebugMenuEntries.CurrentTimerMinutesSelect != nullptr && !s_DebugMenuEntries.CurrentTimerMinutesSelect->sublist->empty()
+		&& s_DebugMenuEntries.CurrentTimerSecondsSelect != nullptr && !s_DebugMenuEntries.CurrentTimerSecondsSelect->sublist->empty())
 	{
 		IGOTimerWidget* const timer = g_femanager->IGO->TimerWidget;
-		s_CurrentTimerMinutesSelect->sublist->selected_entry_index = static_cast<size_t>(truncf(timer->Seconds)) / 60;
-		s_CurrentTimerSecondsSelect->sublist->selected_entry_index = static_cast<size_t>(timer->Seconds) % 60;
+		s_DebugMenuEntries.CurrentTimerMinutesSelect->sublist->selected_entry_index = static_cast<size_t>(truncf(timer->Seconds)) / 60;
+		s_DebugMenuEntries.CurrentTimerSecondsSelect->sublist->selected_entry_index = static_cast<size_t>(timer->Seconds) % 60;
 	}
 }
 
 static void UpdateCameraEntry()
 {
-	if (s_CameraModeSelect != nullptr && game::has_inst())
+	if (s_DebugMenuEntries.CameraModeSelect != nullptr && game::has_inst())
 	{
-		s_CameraModeSelect->sublist->selected_entry_index = static_cast<size_t>(game::inst()->camera_settings->is_user_mode);
+		s_DebugMenuEntries.CameraModeSelect->sublist->selected_entry_index = static_cast<size_t>(game::inst()->camera_settings->is_user_mode);
 	}
 }
 
 static void UpdateWarpEntry()
 {
-	if (s_WarpButton != nullptr && s_WarpButton->sublist->empty())
+	if (s_DebugMenuEntries.WarpButton != nullptr && s_DebugMenuEntries.WarpButton->sublist->empty())
 	{
 		region* regions = game::get_regions();
 		for (size_t i = 0; regions != nullptr && i < sizeof(s_RegionStrips) / sizeof(MenuRegionStrip); i++)
@@ -167,7 +152,7 @@ static bool NGLMenuOnShow()
 		return false;
 	}
 
-	const bool isFreecamPauseEnabled = s_DebugMenuToggles.Freecam && s_DebugMenuToggles.FreecamPause;
+	const bool isFreecamPauseEnabled = s_DebugMenuEntries.Freecam && s_DebugMenuEntries.FreecamPause;
 
 	if (!isFreecamPauseEnabled)
 	{
@@ -194,7 +179,7 @@ static bool NGLMenuOnShow()
 
 static bool NGLMenuOnHide()
 {
-	const bool isFreecamPauseEnabled = s_DebugMenuToggles.Freecam && s_DebugMenuToggles.FreecamPause;
+	const bool isFreecamPauseEnabled = s_DebugMenuEntries.Freecam && s_DebugMenuEntries.FreecamPause;
 	game* const g = app::inst()->game_inst;
 	if (g->paused && !isFreecamPauseEnabled)
 	{
@@ -217,29 +202,38 @@ static void InitializeDebugMenu()
 static void CreateGlobaEntry()
 {
 	const std::shared_ptr<debug_menu_entry> globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
-	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &s_DebugMenuToggles.UnlockFPS, nullptr);
-	s_PerfInfoSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Show Perf Info", nullptr, nullptr);
-	for (unsigned char i = 0; i <= 2; i++)
-	{
-		const std::shared_ptr<char> idxBuffer = std::shared_ptr<char>(new char[2]);
-		sprintf(idxBuffer.get(), "%d", static_cast<int>(i));
-		s_PerfInfoSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, idxBuffer.get(), nullptr, nullptr);
-	}
-	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Benchmarking Info", &s_DebugMenuToggles.ShowBenchmarkingInfo, nullptr);
-	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &s_DebugMenuToggles.DisableInterface, nullptr);
-	s_TimeScaleSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Time Scale", nullptr, nullptr);
+	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &s_DebugMenuEntries.UnlockFPS, nullptr);
+	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &s_DebugMenuEntries.DisableInterface, nullptr);
+	
+	s_DebugMenuEntries.TimeScaleSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Time Scale", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_TimeScaleOptions) / sizeof(float); i++)
 	{
 		const float& scale = s_TimeScaleOptions[i];
 		const std::shared_ptr<char> scaleBuffer = std::shared_ptr<char>(new char[TIME_SCALE_MAX_CHAR]);
 		sprintf(scaleBuffer.get(), "%.1f", scale);
-		s_TimeScaleSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, scaleBuffer.get(), nullptr, nullptr);
+		s_DebugMenuEntries.TimeScaleSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, scaleBuffer.get(), nullptr, nullptr);
 		if (scale == 1.0f)
 		{
-			s_TimeScaleSelect->sublist->selected_entry_index = i;
+			s_DebugMenuEntries.TimeScaleSelect->sublist->selected_entry_index = i;
 		}
 	}
-	s_XInputStatusLabel = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::TEXT, "XInput Status: 0", nullptr, nullptr);
+	
+	s_DebugMenuEntries.XInputStatusLabel = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::TEXT, "XInput Status: 0", nullptr, nullptr);
+}
+
+static void CreateNGLEntry()
+{
+	const std::shared_ptr<debug_menu_entry> nglMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "NGL", nullptr, nullptr);
+	
+	s_DebugMenuEntries.PerfInfoSelect = nglMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Show Perf Info", nullptr, nullptr);
+	for (unsigned char i = 0; i <= 2; i++)
+	{
+		const std::shared_ptr<char> idxBuffer = std::shared_ptr<char>(new char[2]);
+		sprintf(idxBuffer.get(), "%d", static_cast<int>(i));
+		s_DebugMenuEntries.PerfInfoSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, idxBuffer.get(), nullptr, nullptr);
+	}
+
+	nglMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Benchmarking Info", &s_DebugMenuEntries.ShowBenchmarkingInfo, nullptr);
 }
 
 static void CreateHeroEntry()
@@ -259,74 +253,74 @@ static void CreateHeroEntry()
 		sprintf(idxBuffer.get(), "Spawn Point %02d", static_cast<int>(i));
 		spawnPointsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, idxBuffer.get(), &SpawnToPoint, reinterpret_cast<void*>(i));
 	}
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "God Mode", &s_DebugMenuToggles.GodMode, nullptr);
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Spidey Infinite Combo Meter", &s_DebugMenuToggles.InfiniteCombo, nullptr);
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Black Suit Rage", &s_DebugMenuToggles.BlacksuitRage, nullptr);
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "New Goblin Infinite Boost", &s_DebugMenuToggles.NewGoblinBoost, nullptr);
-	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Instant Kill", &s_DebugMenuToggles.InstantKill, nullptr);
-	s_MovementSpeedSelect = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Spidey Movement Speed", nullptr, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "God Mode", &s_DebugMenuEntries.GodMode, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Spidey Infinite Combo Meter", &s_DebugMenuEntries.InfiniteCombo, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Black Suit Rage", &s_DebugMenuEntries.BlacksuitRage, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "New Goblin Infinite Boost", &s_DebugMenuEntries.NewGoblinBoost, nullptr);
+	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Instant Kill", &s_DebugMenuEntries.InstantKill, nullptr);
+	s_DebugMenuEntries.MovementSpeedSelect = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Spidey Movement Speed", nullptr, nullptr);
 	for (const float& speed : s_MovementSpeeds)
 	{
 		const std::shared_ptr<char> speedBuffer = std::shared_ptr<char>(new char[MOVEMENT_SPEED_OPTION_MAX_CHAR]);
 		itoa(static_cast<int>(speed), speedBuffer.get(), 10);
-		s_MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer.get(), nullptr, nullptr);
+		s_DebugMenuEntries.MovementSpeedSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, speedBuffer.get(), nullptr, nullptr);
 	}
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Unlock All Upgrades", &UnlockAllUpgrades, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Full Health", &FullHealth, nullptr);
 	heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Kill Hero", &KillHero, nullptr);
-	s_HeroPositionLabel = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::TEXT, "Position: (0, 0, 0)", nullptr, nullptr);
+	s_DebugMenuEntries.HeroPositionLabel = heroMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::TEXT, "Position: (0, 0, 0)", nullptr, nullptr);
 }
 
 static void CreateWorldEntry()
 {
 	const std::shared_ptr<debug_menu_entry> worldMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "World", nullptr, nullptr);
-	s_GameTimeSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Game Time", nullptr, nullptr);
+	s_DebugMenuEntries.GameTimeSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Game Time", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_WorldTimes) / sizeof(const char*); i++)
 	{
 		const char* worldTime = s_WorldTimes[i];
-		s_GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, worldTime, &SetWorldTime, reinterpret_cast<void*>(static_cast<DWORD>(i)));
+		s_DebugMenuEntries.GameTimeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, worldTime, &SetWorldTime, reinterpret_cast<void*>(static_cast<DWORD>(i)));
 	}
-	s_GlassHouseLevelSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Glass House Level", nullptr, nullptr);
+	s_DebugMenuEntries.GlassHouseLevelSelect = worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Glass House Level", nullptr, nullptr);
 	for (const int& level : s_GlassHouseLevels)
 	{
 		const std::shared_ptr<char> levelNumBuffer = std::shared_ptr<char>(new char[GLASS_HOUSE_LEVEL_OPTION_MAX_CHAR]);
 		itoa(level, levelNumBuffer.get(), 10);
-		s_GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer.get(), &slf::set_glass_house_level, reinterpret_cast<void*>(level));
+		s_DebugMenuEntries.GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer.get(), &slf::set_glass_house_level, reinterpret_cast<void*>(level));
 	}
-	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &s_DebugMenuToggles.DisableTraffic, nullptr);
+	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &s_DebugMenuEntries.DisableTraffic, nullptr);
 }
 
 static void CreatePedestriansEntry()
 {
 	const std::shared_ptr<debug_menu_entry> pedsMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Pedestrians", nullptr, nullptr);
-	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Pedestrians", &s_DebugMenuToggles.DisablePedestrians, nullptr);
+	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Pedestrians", &s_DebugMenuEntries.DisablePedestrians, nullptr);
 	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport All To Me", &TeleportAllPedestriansToMe, nullptr);
 }
 
 static void CreateCameraEntry()
 {
 	const std::shared_ptr<debug_menu_entry> cameraMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Camera", nullptr, nullptr);
-	s_FovSlider = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "FOV", nullptr, nullptr);
+	s_DebugMenuEntries.FovSlider = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "FOV", nullptr, nullptr);
 	for (int i = SM3_CAMERA_MIN_FOV; i < SM3_CAMERA_MAX_FOV + 1; i++)
 	{
 		const std::shared_ptr<char> fovBuffer = std::shared_ptr<char>(new char[FOV_OPTION_MAX_CHAR]);
 		itoa(i, fovBuffer.get(), 10);
-		s_FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer.get(), nullptr, nullptr);
+		s_DebugMenuEntries.FovSlider->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, fovBuffer.get(), nullptr, nullptr);
 	}
 
-	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Change FOV", &s_DebugMenuToggles.ChangeFOV, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Change FOV", &s_DebugMenuEntries.ChangeFOV, nullptr);
 
-	s_FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
+	s_DebugMenuEntries.FovSlider->sublist->selected_entry_index = SM3_CAMERA_DEFAULT_FOV - SM3_CAMERA_MIN_FOV;
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Default FOV", &SetCameraFovDefault, nullptr);
-	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Alternative Angles in Cutscenes", &s_DebugMenuToggles.AlternativeCutsceneAngles, nullptr);
-	s_CameraModeSelect = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Camera Mode", nullptr, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Alternative Angles in Cutscenes", &s_DebugMenuEntries.AlternativeCutsceneAngles, nullptr);
+	s_DebugMenuEntries.CameraModeSelect = cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Camera Mode", nullptr, nullptr);
 	for (const char* const& mode : s_CameraModes)
 	{
-		s_CameraModeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mode, &SetCameraMode, nullptr);
+		s_DebugMenuEntries.CameraModeSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mode, &SetCameraMode, nullptr);
 	}
 
-	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam", &s_DebugMenuToggles.Freecam, nullptr);
-	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam Pause", &s_DebugMenuToggles.FreecamPause, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam", &s_DebugMenuEntries.Freecam, nullptr);
+	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Freecam Pause", &s_DebugMenuEntries.FreecamPause, nullptr);
 	cameraMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "TP Hero To Camera", &TeleportToCamera, nullptr);
 
 }
@@ -334,9 +328,11 @@ static void CreateCameraEntry()
 static void CreateMissionManagerEntry()
 {
 	const std::shared_ptr<debug_menu_entry> missionManagerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Mission Manager", nullptr, nullptr);
+
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Complete Mission", &CompleteCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Fail Mission", &FailCurrentMission, nullptr);
 	missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Abort Mission", &AbortCurrentMission, nullptr);
+
 	const std::shared_ptr<debug_menu_entry> loadMissionMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Mission", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_MissionsScripts) / sizeof(RHMissionScript); i++)
 	{
@@ -365,6 +361,7 @@ static void CreateMissionManagerEntry()
 			loadMissionMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, mission->instance_name, &LoadMissionScript, mission);
 		}
 	}
+
 	const std::shared_ptr<debug_menu_entry> cutscenesMenu = missionManagerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Load Cutscene", nullptr, nullptr);
 	for (const char* const& cutscene : s_Cutscenes)
 	{
@@ -375,32 +372,37 @@ static void CreateMissionManagerEntry()
 static void CreateTimerEntry()
 {
 	const std::shared_ptr<debug_menu_entry> timerMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Timer", nullptr, nullptr);
+	
 	timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Show Timer", &ShowTimer, nullptr);
 	timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Hide Timer", &HideTimer, nullptr);
-	s_CurrentTimerMinutesSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Minutes", nullptr, nullptr);
+	
+	s_DebugMenuEntries.CurrentTimerMinutesSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Minutes", nullptr, nullptr);
 	for (size_t i = 0; i < 60; i++)
 	{
 		const std::shared_ptr<char> mins_buffer = std::shared_ptr<char>(new char[TIMER_DIGITS_OPTION_MAX_CHAR]);
 		itoa(i, mins_buffer.get(), 10);
-		s_CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mins_buffer.get(), &SetTimerTime, nullptr);
+		s_DebugMenuEntries.CurrentTimerMinutesSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, mins_buffer.get(), &SetTimerTime, nullptr);
 	}
-	s_CurrentTimerSecondsSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Seconds", nullptr, nullptr);
+
+	s_DebugMenuEntries.CurrentTimerSecondsSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Seconds", nullptr, nullptr);
 	for (size_t i = 0; i < 60; i++)
 	{
 		const std::shared_ptr<char> secs_buffer = std::shared_ptr<char>(new char[TIMER_DIGITS_OPTION_MAX_CHAR]);
 		itoa(i, secs_buffer.get(), 10);
-		s_CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, secs_buffer.get(), &SetTimerTime, nullptr);
+		s_DebugMenuEntries.CurrentTimerSecondsSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, secs_buffer.get(), &SetTimerTime, nullptr);
 	}
-	s_CurrentTimerRSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "R", nullptr, nullptr);
-	s_CurrentTimerGSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "G", nullptr, nullptr);
-	s_CurrentTimerBSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "B", nullptr, nullptr);
+
+	s_DebugMenuEntries.CurrentTimerRSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "R", nullptr, nullptr);
+	s_DebugMenuEntries.CurrentTimerGSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "G", nullptr, nullptr);
+	s_DebugMenuEntries.CurrentTimerBSelect = timerMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "B", nullptr, nullptr);
+
 	for (size_t i = 0; i <= 255; i++)
 	{
 		const std::shared_ptr<char> color_buffer = std::shared_ptr<char>(new char[TIMER_COLOR_OPTION_MAX_CHAR]);
 		itoa(i, color_buffer.get(), 10);
-		s_CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
-		s_CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
-		s_CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
+		s_DebugMenuEntries.CurrentTimerRSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
+		s_DebugMenuEntries.CurrentTimerGSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
+		s_DebugMenuEntries.CurrentTimerBSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, color_buffer.get(), &SetTimerColor, nullptr);
 	}
 }
 
@@ -421,7 +423,7 @@ static void CreatePhysicsMenu()
 
 static void CreateWarpEntry()
 {
-	s_WarpButton = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Warp", nullptr, nullptr);
+	s_DebugMenuEntries.WarpButton = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Warp", nullptr, nullptr);
 }
 
 static void CreateMenuInfo()
@@ -432,18 +434,18 @@ static void CreateMenuInfo()
 
 static void UpdateXInputStatusLabel()
 {
-	if (s_XInputStatusLabel != nullptr)
+	if (s_DebugMenuEntries.XInputStatusLabel != nullptr)
 	{
-		sprintf(s_XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status_str());
+		sprintf(s_DebugMenuEntries.XInputStatusLabel->text, "XInput Status: %s", xenon_input_mgr::get_status_str());
 	}
 }
 
 static void UpdateHeroPositionLabel()
 {
-	if (s_HeroPositionLabel != nullptr)
+	if (s_DebugMenuEntries.HeroPositionLabel != nullptr)
 	{
 		const vector3d& pos = world::inst()->hero_entity->transform->get_position();
-		sprintf(s_HeroPositionLabel->text, "Position: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
+		sprintf(s_DebugMenuEntries.HeroPositionLabel->text, "Position: (%.3f, %.3f, %.3f)", pos.x, pos.y, pos.z);
 	}
 }
 
@@ -452,6 +454,8 @@ void CreateDebugMenu()
 	InitializeDebugMenu();
 
 	CreateGlobaEntry();
+
+	CreateNGLEntry();
 
 	CreateHeroEntry();
 
