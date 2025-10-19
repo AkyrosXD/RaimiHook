@@ -12,6 +12,11 @@ public:
 	static bool& show_perf_info;
 
 	/// <summary>
+	/// Show information about benchmarking for CPU and GPU timing
+	/// </summary>
+	static bool& show_benchmarking_info;
+
+	/// <summary>
 	/// God mode
 	/// </summary>
 	static bool& god_mode;

@@ -10,7 +10,7 @@
 
 struct DebugMenuToggles
 {
-	bool ShowStats = false;
+	bool ShowPerfInfo = false;
 	bool GodMode = false;
 	bool UnlockFPS = false;
 	bool NewGoblinBoost = false;
@@ -25,6 +25,7 @@ struct DebugMenuToggles
 	bool Freecam = false;
 	bool FreecamPause = false;
 	bool ChangeFOV = false;
+	bool ShowBenchmarkingInfo = false;
 };
 
 static const char* s_Heroes[] =

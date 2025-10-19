@@ -217,7 +217,8 @@ static void CreateGlobaEntry()
 {
 	const std::shared_ptr<debug_menu_entry> globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &s_DebugMenuToggles.UnlockFPS, nullptr);
-	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Perf Info", &s_DebugMenuToggles.ShowStats, nullptr);
+	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Perf Info", &s_DebugMenuToggles.ShowPerfInfo, nullptr);
+	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Benchmarking Info", &s_DebugMenuToggles.ShowBenchmarkingInfo, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &s_DebugMenuToggles.DisableInterface, nullptr);
 	s_TimeScaleSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Time Scale", nullptr, nullptr);
 	for (size_t i = 0; i < sizeof(s_TimeScaleOptions) / sizeof(float); i++)
