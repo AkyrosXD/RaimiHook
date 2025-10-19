@@ -9,6 +9,7 @@
 #include "game/mission_manager.hpp"
 #include "game/world.hpp"
 #include "game/app.hpp"
+#include "game/dev_opts.hpp"
 
 #include "DebugMenuUI.hpp"
 #include "SpawnPointUtils.hpp"
@@ -343,4 +344,9 @@ void SetTimeScale()
 {
 	const float selectedScale = s_TimeScaleOptions[s_TimeScaleSelect->sublist->selected_entry_index];
 	app::time_scale_denominator = SM3_DEFAULT_TIME_SCALE_DENOMINATOR / selectedScale;
+}
+
+void SetPerfInfo()
+{
+	dev_opts::show_perf_info = static_cast<unsigned char>(s_PerfInfoSelect->sublist->selected_entry_index);
 }

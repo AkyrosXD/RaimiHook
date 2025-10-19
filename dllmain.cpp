@@ -111,7 +111,7 @@ struct app_hooks
 			input_mgr::update();
 			xenon_input_mgr::update_state();
 
-			dev_opts::show_perf_info = s_DebugMenuToggles.ShowPerfInfo;
+			SetPerfInfo();
 			dev_opts::show_benchmarking_info = s_DebugMenuToggles.ShowBenchmarkingInfo && !s_DebugMenu->is_open(); // info gets drawn above the debug menu
 
 			if (!s_DebugMenu->is_open())

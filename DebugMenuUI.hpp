@@ -10,7 +10,6 @@
 
 struct DebugMenuToggles
 {
-	bool ShowPerfInfo = false;
 	bool GodMode = false;
 	bool UnlockFPS = false;
 	bool NewGoblinBoost = false;
@@ -120,6 +119,7 @@ extern std::shared_ptr<debug_menu_entry> s_CurrentTimerGSelect;
 extern std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect;
 extern std::shared_ptr<debug_menu_entry> s_HeroPositionLabel;
 extern std::shared_ptr<debug_menu_entry> s_TimeScaleSelect;
+extern std::shared_ptr<debug_menu_entry> s_PerfInfoSelect;
 
 extern DebugMenuToggles s_DebugMenuToggles;
 

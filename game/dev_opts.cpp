@@ -1,6 +1,6 @@
 #include "dev_opts.hpp"
 
-bool& dev_opts::show_perf_info = *reinterpret_cast<bool*>(0x1106978);
+unsigned char& dev_opts::show_perf_info = *reinterpret_cast<unsigned char*>(0x1106978);
 
 bool& dev_opts::show_benchmarking_info = *reinterpret_cast<bool*>(0x1106979);
 

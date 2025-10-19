@@ -35,6 +35,7 @@ std::shared_ptr<debug_menu_entry> s_CurrentTimerGSelect = nullptr;
 std::shared_ptr<debug_menu_entry> s_CurrentTimerBSelect = nullptr;
 std::shared_ptr<debug_menu_entry> s_HeroPositionLabel = nullptr;
 std::shared_ptr<debug_menu_entry> s_TimeScaleSelect = nullptr;
+std::shared_ptr<debug_menu_entry> s_PerfInfoSelect = nullptr;
 
 DebugMenuToggles s_DebugMenuToggles;
 
@@ -217,7 +218,13 @@ static void CreateGlobaEntry()
 {
 	const std::shared_ptr<debug_menu_entry> globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &s_DebugMenuToggles.UnlockFPS, nullptr);
-	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Perf Info", &s_DebugMenuToggles.ShowPerfInfo, nullptr);
+	s_PerfInfoSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Show Perf Info", nullptr, nullptr);
+	for (unsigned char i = 0; i <= 2; i++)
+	{
+		const std::shared_ptr<char> idxBuffer = std::shared_ptr<char>(new char[2]);
+		sprintf(idxBuffer.get(), "%d", static_cast<int>(i));
+		s_PerfInfoSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, idxBuffer.get(), nullptr, nullptr);
+	}
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Show Benchmarking Info", &s_DebugMenuToggles.ShowBenchmarkingInfo, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &s_DebugMenuToggles.DisableInterface, nullptr);
 	s_TimeScaleSelect = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT, "Time Scale", nullptr, nullptr);

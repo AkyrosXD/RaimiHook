@@ -9,7 +9,7 @@ public:
 	/// <summary>
 	/// Show information about performance
 	/// </summary>
-	static bool& show_perf_info;
+	static unsigned char& show_perf_info;
 
 	/// <summary>
 	/// Show information about benchmarking for CPU and GPU timing
