@@ -17,6 +17,7 @@ struct DebugMenuEntries
 	bool FreezeTimer = false;
 	bool DisablePedestrians = false;
 	bool DisableTraffic = false;
+	bool DisableTrafficFlow = false;
 	bool DisableInterface = false;
 	bool BlacksuitRage = false;
 	bool InfiniteCombo = false;

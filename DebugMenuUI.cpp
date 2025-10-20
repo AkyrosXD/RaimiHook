@@ -287,7 +287,6 @@ static void CreateWorldEntry()
 		itoa(level, levelNumBuffer.get(), 10);
 		s_DebugMenuEntries.GlassHouseLevelSelect->add_sub_entry(E_NGLMENU_ENTRY_TYPE::SELECT_OPTION, levelNumBuffer.get(), &slf::set_glass_house_level, reinterpret_cast<void*>(level));
 	}
-	worldMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &s_DebugMenuEntries.DisableTraffic, nullptr);
 }
 
 static void CreatePedestriansEntry()
@@ -295,6 +294,13 @@ static void CreatePedestriansEntry()
 	const std::shared_ptr<debug_menu_entry> pedsMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Pedestrians", nullptr, nullptr);
 	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Pedestrians", &s_DebugMenuEntries.DisablePedestrians, nullptr);
 	pedsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, "Teleport All To Me", &TeleportAllPedestriansToMe, nullptr);
+}
+
+static void CreateTrafficEntry()
+{
+	const std::shared_ptr<debug_menu_entry> trafficMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Traffic", nullptr, nullptr);
+	trafficMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic Flow", &s_DebugMenuEntries.DisableTrafficFlow, nullptr);
+	trafficMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Traffic", &s_DebugMenuEntries.DisableTraffic, nullptr);
 }
 
 static void CreateCameraEntry()
@@ -462,6 +468,8 @@ void CreateDebugMenu()
 	CreateWorldEntry();
 
 	CreatePedestriansEntry();
+
+	CreateTrafficEntry();
 
 	CreateCameraEntry();
 

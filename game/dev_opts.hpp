@@ -30,4 +30,9 @@ public:
 	/// Is traffict enabled - should the game spawn cars?
 	/// </summary>
 	static bool& traffic_enabled;
+
+	/// <summary>
+	/// Is traffic flow enabled
+	/// </summary>
+	static bool& traffic_flow_enabled;
 };

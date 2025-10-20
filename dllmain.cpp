@@ -136,6 +136,7 @@ struct app_hooks
 				goblin_player_interface::is_boosting &= !s_DebugMenuEntries.NewGoblinBoost;
 				slf::peds_set_peds_enabled(!s_DebugMenuEntries.DisablePedestrians);
 				dev_opts::traffic_enabled = !s_DebugMenuEntries.DisableTraffic;
+				dev_opts::traffic_flow_enabled = !s_DebugMenuEntries.DisableTrafficFlow;
 				dev_opts::instant_kill = s_DebugMenuEntries.InstantKill;
 
 				if (s_DebugMenuEntries.InfiniteCombo && !mission_manager::inst()->playthrough_as_blacksuit() && !mission_manager::inst()->playthrough_as_goblin())
