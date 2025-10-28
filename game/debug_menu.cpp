@@ -353,30 +353,37 @@ void debug_menu::handle_input()
 	const bool up = input_mgr::is_key_pressed_once(DIK_W)
 		|| input_mgr::is_key_pressed_repeated(DIK_W)
 		|| xenon_input_mgr::left_thumb_up_once()
-		|| xenon_input_mgr::left_thumb_up_repeat();
+		|| xenon_input_mgr::left_thumb_up_repeat()
+		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_DPAD_UP)
+		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_DPAD_UP);
 
 	const bool down = input_mgr::is_key_pressed_once(DIK_S)
 		|| input_mgr::is_key_pressed_repeated(DIK_S)
 		|| xenon_input_mgr::left_thumb_down_once()
-		|| xenon_input_mgr::left_thumb_down_repeat();
+		|| xenon_input_mgr::left_thumb_down_repeat()
+		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_DPAD_DOWN)
+		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_DPAD_DOWN);
 
 
 	const bool right =
 		input_mgr::is_key_pressed_once(DIK_D)
 		|| input_mgr::is_key_pressed_repeated(DIK_D)
 		|| xenon_input_mgr::left_thumb_right_once()
-		|| xenon_input_mgr::left_thumb_right_repeat();
+		|| xenon_input_mgr::left_thumb_right_repeat()
+		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_DPAD_RIGHT)
+		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_DPAD_RIGHT);
 
 
 	const bool left = input_mgr::is_key_pressed_once(DIK_A)
 		|| input_mgr::is_key_pressed_repeated(DIK_A)
 		|| xenon_input_mgr::left_thumb_left_once()
-		|| xenon_input_mgr::left_thumb_left_repeat();
+		|| xenon_input_mgr::left_thumb_left_repeat()
+		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_DPAD_LEFT)
+		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_DPAD_LEFT);
 	
 	
 	const bool back = input_mgr::is_key_pressed_once(DIK_ESCAPE)
-		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_B)
-		|| xenon_input_mgr::is_button_pressed_repeat(XINPUT_GAMEPAD_B);
+		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_B);
 	
 	const bool execute = input_mgr::is_key_pressed_once(DIK_SPACE)
 		|| xenon_input_mgr::is_button_pressed_once(XINPUT_GAMEPAD_A);
