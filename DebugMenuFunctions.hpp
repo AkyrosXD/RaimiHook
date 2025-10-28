@@ -21,6 +21,7 @@ void SetTimerTime();
 void SetTimerColor();
 void SetCameraMode();
 void SetHeroColliderFlags(E_ENTITY_COLLIDER_FLAGS flags);
+void SetScreenResolution(const std::pair<DWORD, DWORD>* resolution);
 void KillAllEntities();
 void TeleportAllEntitiesToMe();
 void TeleportToNearestEntity();

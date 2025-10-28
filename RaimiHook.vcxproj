@@ -181,6 +181,7 @@
     <ClCompile Include="game\FEManager.cpp" />
     <ClCompile Include="game\game.cpp" />
     <ClCompile Include="game\transform_matrix.cpp" />
+    <ClCompile Include="game\windows_app.cpp" />
     <ClCompile Include="game\world.cpp" />
     <ClCompile Include="game\world_dynamics_system.cpp" />
     <ClCompile Include="game\goblin_player_interface.cpp" />

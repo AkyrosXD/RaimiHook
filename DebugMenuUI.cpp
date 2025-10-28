@@ -19,6 +19,7 @@
 #define TIMER_DIGITS_OPTION_MAX_CHAR 8
 #define TIMER_COLOR_OPTION_MAX_CHAR 8
 #define TIME_SCALE_MAX_CHAR 6
+#define SCREEN_RES_MAX_LENGTH 24
 
 std::shared_ptr<debug_menu> s_DebugMenu = nullptr;
 
@@ -202,6 +203,20 @@ static void InitializeDebugMenu()
 static void CreateGlobaEntry()
 {
 	const std::shared_ptr<debug_menu_entry> globalMenu = s_DebugMenu->add_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Global", nullptr, nullptr);
+
+	const std::shared_ptr<debug_menu_entry> resolutionsMenu = globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::MENU, "Resolution", nullptr, nullptr);
+
+	for (const std::pair<DWORD, DWORD>& resolution : windows_app::inst()->get_available_screen_resolutions())
+	{
+		const DWORD& width = resolution.first;
+		const DWORD& height = resolution.second;
+
+		const std::shared_ptr<char> resBuffer = std::shared_ptr<char>(new char[SCREEN_RES_MAX_LENGTH]);
+		sprintf(resBuffer.get(), "%dX%d", width, height);
+		std::pair<DWORD, DWORD>* const resolution_ptr = new std::pair<DWORD, DWORD>(resolution);
+		resolutionsMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BUTTON, resBuffer.get(), &SetScreenResolution, static_cast<void*>(resolution_ptr));
+	}
+
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Remove FPS Limit", &s_DebugMenuEntries.UnlockFPS, nullptr);
 	globalMenu->add_sub_entry(E_NGLMENU_ENTRY_TYPE::BOOLEAN, "Disable Interface", &s_DebugMenuEntries.DisableInterface, nullptr);
 	

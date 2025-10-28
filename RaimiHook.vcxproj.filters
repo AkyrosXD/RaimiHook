@@ -102,6 +102,9 @@
     <ClCompile Include="FreecamController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="game\windows_app.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="d3d9_proxy.hpp">

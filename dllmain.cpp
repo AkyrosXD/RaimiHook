@@ -1,7 +1,6 @@
 #include <Windows.h>
 #include <Psapi.h>
 #include <detours.h>
-#include <iostream>
 
 #include "d3d9_proxy.hpp"
 #include "game/app.hpp"

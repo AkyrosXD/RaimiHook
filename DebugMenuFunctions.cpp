@@ -165,6 +165,16 @@ void SetHeroColliderFlags(E_ENTITY_COLLIDER_FLAGS flags)
 	}
 }
 
+void SetScreenResolution(const std::pair<DWORD, DWORD>* resolution)
+{
+	const DWORD& width = resolution->first;
+	const DWORD& height = resolution->second;
+
+	windows_app::screen_width = width;
+	windows_app::screen_height = height;
+	windows_app::should_reload_render_window = true;
+}
+
 void KillAllEntities()
 {
 	size_t entities_killed = 0;

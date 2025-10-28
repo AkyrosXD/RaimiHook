@@ -2,7 +2,6 @@
 #include "windows_app.hpp"
 
 #include <stdexcept>
-#include <iostream>
 
 #define KEYBOARD_MAX_KEYS 256
 #define KEYBOARD_REPEAT_DELAY 500
