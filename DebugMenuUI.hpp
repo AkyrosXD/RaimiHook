@@ -4,7 +4,7 @@
 
 #include "game/debug_menu.hpp"
 
-#define RAIMIHOOK_VER_STR NGL_TEXT_WITH_COLOR("RaimiHook Version: 12 [DEV]", "DB7D09FF")
+#define RAIMIHOOK_VER_STR NGL_TEXT_WITH_COLOR("RaimiHook Version: 12", "DB7D09FF")
 
 #define DEBUG_MENU_PAUSE_TYPE 8
 
