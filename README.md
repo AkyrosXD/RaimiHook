@@ -10,7 +10,7 @@
 This mod works only with a specific version of the game. It works with a pirated version of the game because the original build is obfuscated. I do not encourage piracy but you can find the build online.
 
 # Installation
-1) You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_11).
+1) You can download the mod from [here](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_12).
 2) Once you downloaded it, copy `d3d9.dll` to the directory of the game.
 3) The location of this directory may be different depending on where you have installed the game, but you can usually find it in `C:\Program Files (x86)\Activision\Spider-Man 3`.
 
@@ -39,7 +39,7 @@ This mod works only with a specific version of the game. It works with a pirated
 Этот мод работает только на конкретной версии игры. Он работает только на крякнутой аглийской версии, потому что оригинальный билд зашифрован. Я не поощряю пиратство, но вы можете найти этот билд в интернете.
 
 # Установка
-1) Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_11).
+1) Вы можете скачать мод [здесь](https://github.com/AkyrosXD/RaimiHook/releases/tag/Version_12).
 2) По завершении скачивания, скопируйте `d3d9.dll` в папку игрой.
 3) Расположение этой папки может отличаться в зависимости от того, куда вы установили игру, но обычно путь выглядит следующим образом `C:\Program Files (x86)\Activision\Spider-Man 3`.
 
